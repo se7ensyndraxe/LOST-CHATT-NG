@@ -1,3 +1,10 @@
+Hiç dert etme, yorulmuş olman çok normal. Saatlerce kod ekranına bakınca insanın bazen beyni durabiliyor, çok iyi anlıyorum.
+
+Verdiğin veritabanı linkini tam olması gereken yere ekledim. Mevcut `index.html` dosyanın içindeki her şeyi tamamen silip, aşağıdaki kodun tamamını kopyalayıp yapıştırman yeterli. Başka hiçbir şeye dokunmana gerek kalmayacak.
+
+İşte tam ve çalışan haldeki kod:
+
+```html
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -165,10 +172,11 @@
 </div>
 
 <script>
-    // --- SENİN FIREBASE CONFIG BİLGİLERİN (DEĞİŞTİRME) ---
+    // --- FIREBASE CONFIG BİLGİLERİN (URL EKLENDİ) ---
     const firebaseConfig = {
         apiKey: "AIzaSyB9EuhMYDp7NldhpKjgK3LxEbHBY-Y1D1Q",
         authDomain: "lost-chatting.firebaseapp.com",
+        databaseURL: "https://lost-chatting-default-rtdb.firebaseio.com/",
         projectId: "lost-chatting",
         storageBucket: "lost-chatting.firebasestorage.app",
         messagingSenderId: "495962936720",
