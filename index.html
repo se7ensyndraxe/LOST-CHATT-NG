@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <link rel="manifest" href="./manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>LOST CHATTING</title>
@@ -10,6 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
     <style>
         * { box-sizing: border-box; }
@@ -560,6 +560,567 @@
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: #000; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 5px; }
+
+        /* ===== Avatar fill (photo support) ===== */
+        .profile-avatar-inner,
+        .story-avatar-inner,
+        .story-viewer-avatar,
+        .row-avatar {
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #fff;
+            background-color: #262626;
+        }
+
+        /* ===== Stories bar ===== */
+        .stories-bar {
+            display: flex;
+            gap: 14px;
+            padding: 14px 14px 16px;
+            overflow-x: auto;
+            border-bottom: 1px solid #262626;
+            flex-shrink: 0;
+        }
+
+        .story-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            width: 66px;
+            cursor: pointer;
+            background: none;
+            border: 0;
+            color: #fff;
+        }
+
+        .story-ring {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #262626;
+            padding: 2.5px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .story-ring.has-story {
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        }
+
+        .story-avatar-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid #000;
+            font-size: 22px;
+        }
+
+        .story-add-badge {
+            position: absolute;
+            right: -2px;
+            bottom: -2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #0095f6;
+            border: 2px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #fff;
+        }
+
+        .story-username {
+            font-size: 11px;
+            max-width: 64px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #ddd;
+        }
+
+        /* ===== Profile photo edit badge ===== */
+        .profile-avatar {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .avatar-edit-badge {
+            position: absolute;
+            right: -2px;
+            bottom: -2px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #0095f6;
+            border: 2px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #fff;
+        }
+
+        .profile-avatar-inner {
+            font-size: 28px;
+        }
+
+        /* ===== Profile stats ===== */
+        .profile-stats {
+            display: flex;
+            gap: 22px;
+            margin: 10px 0 14px;
+        }
+
+        .profile-stats button {
+            background: none;
+            border: 0;
+            color: #fff;
+            padding: 0;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            font: inherit;
+        }
+
+        .profile-stats button strong {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .profile-stats button span {
+            font-size: 12px;
+            color: #a8a8a8;
+        }
+
+        /* ===== Search page ===== */
+        .search-panel {
+            padding: 12px;
+            border-bottom: 1px solid #262626;
+            flex-shrink: 0;
+        }
+
+        .search-input {
+            width: 100%;
+            background: #161616;
+            border: 1px solid #303030;
+            color: #fff;
+            padding: 11px 14px;
+            border-radius: 10px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .search-input:focus {
+            border-color: #666;
+        }
+
+        .search-results {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 6px 0;
+        }
+
+        .search-hint, .search-empty {
+            color: #777;
+            text-align: center;
+            font-size: 13px;
+            padding: 30px 24px;
+        }
+
+        .user-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            cursor: pointer;
+        }
+
+        .user-row:hover {
+            background: #0a0a0a;
+        }
+
+        .row-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid #333;
+            flex-shrink: 0;
+            font-size: 17px;
+        }
+
+        .user-row-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-row-name {
+            font-weight: 600;
+            font-size: 14px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .user-row-sub {
+            font-size: 12px;
+            color: #a8a8a8;
+        }
+
+        .row-follow-btn {
+            border: 1px solid #303030;
+            background: #0095f6;
+            color: #fff;
+            font-weight: 700;
+            font-size: 12px;
+            padding: 7px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .row-follow-btn.following {
+            background: transparent;
+            color: #fff;
+            border-color: #444;
+        }
+
+        /* ===== Overlay pages (profile view / followers list) ===== */
+        .overlay-page {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 450px;
+            height: 100vh;
+            height: 100dvh;
+            background: #000;
+            display: none;
+            flex-direction: column;
+            z-index: 40;
+            border-left: 1px solid #262626;
+            border-right: 1px solid #262626;
+        }
+
+        .overlay-page.active {
+            display: flex;
+        }
+
+        .follow-action-row {
+            padding: 0 20px 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .follow-btn-main {
+            flex: 1;
+            background: #0095f6;
+            color: #fff;
+            border: 0;
+            padding: 11px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .follow-btn-main.following {
+            background: #262626;
+            border: 1px solid #333;
+        }
+
+        .message-btn-main {
+            flex: 1;
+            background: #262626;
+            color: #fff;
+            border: 1px solid #333;
+            padding: 11px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* ===== Reels ===== */
+        .reels-feed {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            scroll-snap-type: y mandatory;
+        }
+
+        .reel-item {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            scroll-snap-align: start;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .reel-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .reel-overlay {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 18px 70px 22px 14px;
+            background: linear-gradient(to top, rgba(0,0,0,0.75), transparent);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .reel-user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .reel-caption {
+            font-size: 13px;
+            color: #eee;
+            word-break: break-word;
+        }
+
+        .reel-side-actions {
+            position: absolute;
+            right: 10px;
+            bottom: 90px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .reel-like-btn {
+            background: none;
+            border: 0;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .reel-like-btn i {
+            font-size: 26px;
+            transition: transform 0.15s;
+        }
+
+        .reel-like-btn.liked i {
+            color: #ed4956;
+        }
+
+        .reel-like-btn.bump i {
+            transform: scale(1.25);
+        }
+
+        /* ===== Reel share sheet ===== */
+        .reel-share-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.92);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            padding: 20px;
+        }
+
+        .reel-share-overlay.active {
+            display: flex;
+        }
+
+        .reel-share-box {
+            width: 100%;
+            max-width: 380px;
+            background: #111;
+            border: 1px solid #262626;
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .reel-share-preview {
+            width: 100%;
+            max-height: 280px;
+            border-radius: 10px;
+            background: #000;
+            margin-bottom: 12px;
+        }
+
+        .reel-caption-input {
+            width: 100%;
+            background: #1a1a1a;
+            border: 1px solid #303030;
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            resize: none;
+            outline: none;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .reel-share-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .reel-share-actions button {
+            flex: 1;
+            padding: 11px;
+            border-radius: 8px;
+            border: 0;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .reel-share-cancel {
+            background: #262626;
+            color: #fff;
+        }
+
+        .reel-share-confirm {
+            background: #0095f6;
+            color: #fff;
+        }
+
+        .reel-share-confirm:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+        .reel-upload-status {
+            text-align: center;
+            font-size: 12px;
+            color: #a8a8a8;
+            margin-top: 8px;
+            min-height: 16px;
+        }
+
+        /* ===== Story viewer ===== */
+        .story-viewer-overlay {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: none;
+            flex-direction: column;
+            z-index: 60;
+        }
+
+        .story-viewer-overlay.active {
+            display: flex;
+        }
+
+        .story-viewer-progress {
+            display: flex;
+            gap: 4px;
+            padding: 8px 10px 0;
+        }
+
+        .story-progress-seg {
+            flex: 1;
+            height: 2.5px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .story-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: #fff;
+        }
+
+        .story-progress-seg.done .story-progress-fill {
+            width: 100%;
+        }
+
+        .story-viewer-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+        }
+
+        .story-viewer-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .story-viewer-username {
+            flex: 1;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .story-viewer-body {
+            flex: 1;
+            min-height: 0;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .story-viewer-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .story-viewer-nav {
+            position: absolute;
+            inset: 0;
+            display: flex;
+        }
+
+        .story-nav-zone {
+            flex: 1;
+            height: 100%;
+        }
+
+        .upload-spinner {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.35);
+            border-top-color: #fff;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -588,6 +1149,7 @@
                 <button class="icon-btn" aria-label="Mesajlar" onclick="switchTab('chat')"><i class="fa-brands fa-facebook-messenger"></i></button>
             </div>
         </div>
+        <div class="stories-bar" id="stories-bar"></div>
         <div class="post">
             <div class="post-header">
                 <div class="avatar"></div>
@@ -597,11 +1159,29 @@
         </div>
     </div>
 
+    <div id="search-page" class="page">
+        <div class="header">
+            <div class="username" style="font-size: 18px;">Ara</div>
+        </div>
+        <div class="search-panel">
+            <input type="text" id="search-input" class="search-input" placeholder="Kullanıcı adı ara" autocomplete="off" oninput="handleSearchInput()">
+        </div>
+        <div class="search-results" id="search-results">
+            <div class="search-hint">Bir kullanıcı adı yazarak hesap ara.</div>
+        </div>
+    </div>
+
     <div id="reels-page" class="page">
-        <div class="reels-container">
-            <i class="fa-solid fa-clapperboard"></i>
-            <h2>Henüz bir reels bulunmamakta</h2>
-            <p style="font-size: 14px;">Yeni videolar yakında burada.</p>
+        <div class="header">
+            <div class="logo" style="font-size: clamp(18px, 5vw, 22px);">Reels</div>
+            <button class="icon-btn" aria-label="Reels Ekle" onclick="triggerReelUpload()"><i class="fa-regular fa-square-plus"></i></button>
+        </div>
+        <div class="reels-feed" id="reels-feed">
+            <div class="reels-container" id="reels-empty-state">
+                <i class="fa-solid fa-clapperboard"></i>
+                <h2>Henüz bir reels bulunmamakta</h2>
+                <p style="font-size: 14px;">Sağ üstteki + butonuna basarak ilk reels'i sen ekle.</p>
+            </div>
         </div>
     </div>
 
@@ -642,21 +1222,61 @@
             <button class="icon-btn" aria-label="Ayarlar"><i class="fa-solid fa-bars"></i></button>
         </div>
         <div class="profile-header">
-            <div class="profile-avatar">
-                <div class="profile-avatar-inner"></div>
+            <div class="profile-avatar" onclick="triggerPhotoUpload()" title="Profil fotoğrafını değiştir">
+                <div class="profile-avatar-inner" id="own-avatar-inner"></div>
+                <div class="avatar-edit-badge"><i class="fa-solid fa-camera"></i></div>
             </div>
             <div class="profile-info" style="flex: 1; min-width: 0;">
                 <h2 id="profile-display-name">Kullanıcı</h2>
-                <button class="logout-btn" onclick="logoutUser()">Hesaptan Çıkış Yap</button>
+                <div class="profile-stats">
+                    <button type="button" onclick="openListModal('following')"><strong id="stat-following">0</strong><span>Takip Edilen</span></button>
+                    <button type="button" onclick="openListModal('followers')"><strong id="stat-followers">0</strong><span>Takipçi</span></button>
+                </div>
             </div>
         </div>
+        <div style="padding: 0 20px;">
+            <button class="logout-btn" onclick="logoutUser()">Hesaptan Çıkış Yap</button>
+        </div>
+    </div>
+
+    <div id="profile-view-overlay" class="overlay-page">
+        <div class="header">
+            <button class="icon-btn" aria-label="Geri" onclick="closeProfileView()"><i class="fa-solid fa-arrow-left"></i></button>
+            <div class="username" id="view-username" style="font-size: 16px;">@kullanici</div>
+            <div style="width: 38px;"></div>
+        </div>
+        <div class="profile-header">
+            <div class="profile-avatar" style="cursor: default;">
+                <div class="profile-avatar-inner" id="view-avatar-inner"></div>
+            </div>
+            <div class="profile-info" style="flex: 1; min-width: 0;">
+                <h2 id="view-display-name">Kullanıcı</h2>
+                <div class="profile-stats">
+                    <button type="button" id="view-following-btn"><strong id="view-stat-following">0</strong><span>Takip Edilen</span></button>
+                    <button type="button" id="view-followers-btn"><strong id="view-stat-followers">0</strong><span>Takipçi</span></button>
+                </div>
+            </div>
+        </div>
+        <div class="follow-action-row">
+            <button class="follow-btn-main" id="view-follow-btn" onclick="toggleFollowViewed()">Takip Et</button>
+            <button class="message-btn-main" onclick="messageViewed()">Mesaj Gönder</button>
+        </div>
+    </div>
+
+    <div id="list-modal-overlay" class="overlay-page">
+        <div class="header">
+            <button class="icon-btn" aria-label="Geri" onclick="closeListModal()"><i class="fa-solid fa-arrow-left"></i></button>
+            <div class="username" id="list-modal-title" style="font-size: 16px;">Takipçiler</div>
+            <div style="width: 38px;"></div>
+        </div>
+        <div class="search-results" id="list-modal-results"></div>
     </div>
 
     <nav class="bottom-nav" aria-label="Alt menü">
         <button class="nav-item active" id="nav-home" onclick="switchTab('home')" aria-label="Ana sayfa">
             <i class="fa-solid fa-house"></i>
         </button>
-        <button class="nav-item" id="nav-search" aria-label="Ara">
+        <button class="nav-item" id="nav-search" onclick="switchTab('search')" aria-label="Ara">
             <i class="fa-solid fa-magnifying-glass"></i>
         </button>
         <button class="nav-item" id="nav-add" aria-label="Yeni gönderi">
@@ -670,6 +1290,38 @@
         </button>
     </nav>
 </div>
+
+<div id="story-viewer-overlay" class="story-viewer-overlay">
+    <div class="story-viewer-progress" id="story-progress"></div>
+    <div class="story-viewer-header">
+        <div class="story-viewer-avatar" id="story-viewer-avatar"></div>
+        <div class="story-viewer-username" id="story-viewer-username"></div>
+        <button class="icon-btn" aria-label="Kapat" onclick="closeStoryViewer()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="story-viewer-body">
+        <img id="story-viewer-image" class="story-viewer-image" alt="">
+        <div class="story-viewer-nav">
+            <div class="story-nav-zone" onclick="storyPrev()"></div>
+            <div class="story-nav-zone" onclick="storyNext()"></div>
+        </div>
+    </div>
+</div>
+
+<div id="reel-share-overlay" class="reel-share-overlay">
+    <div class="reel-share-box">
+        <video id="reel-preview-video" class="reel-share-preview" muted playsinline controls></video>
+        <textarea id="reel-caption-input" class="reel-caption-input" rows="2" maxlength="200" placeholder="Açıklama yaz..."></textarea>
+        <div class="reel-share-actions">
+            <button class="reel-share-cancel" onclick="cancelReelShare()">İptal</button>
+            <button class="reel-share-confirm" id="reel-share-confirm-btn" onclick="shareReel()">Paylaş</button>
+        </div>
+        <div class="reel-upload-status" id="reel-upload-status"></div>
+    </div>
+</div>
+
+<input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoSelected(event)">
+<input type="file" id="story-input" accept="image/*" style="display:none" onchange="handleStorySelected(event)">
+<input type="file" id="reel-input" accept="video/*" style="display:none" onchange="handleReelSelected(event)">
 
 <script>
     const firebaseConfig = {
@@ -689,16 +1341,41 @@
 
     const auth = firebase.auth();
     const database = firebase.database();
+    const storage = firebase.storage();
     const USERNAME_PATTERN = /^[a-z0-9._]{3,24}$/;
+    const STORY_LIFETIME_MS = 24 * 60 * 60 * 1000;
 
     let currentUser = null;
     let currentUid = null;
+    let currentPhotoURL = null;
     let activeConversationId = null;
     let activeRecipient = null;
     let activeMessagesRef = null;
     let activeMessageHandler = null;
     let conversationListRef = null;
     let conversationListHandler = null;
+
+    // Profil / takip sistemi
+    const userProfileCache = {};
+    let viewedUid = null;
+    let viewedUsername = null;
+    let ownFollowersRef = null;
+    let ownFollowingRef = null;
+
+    // Hikayeler (stories)
+    let storiesRootRef = null;
+    let storyFeedByUid = {};
+    let storyUserOrder = [];
+    let storyViewerOrder = [];
+    let activeStoryUserIndex = -1;
+    let activeStoryIndex = 0;
+    let storyTimer = null;
+    const STORY_DURATION_MS = 5000;
+
+    // Reels
+    let reelsRootRef = null;
+    let pendingReelFile = null;
+    const reelLikeListeners = {};
 
     function normalizeUsername(username) {
         return username.trim().toLowerCase();
@@ -719,6 +1396,80 @@
 
     function isValidUsername(username) {
         return USERNAME_PATTERN.test(normalizeUsername(username));
+    }
+
+    // ===== Ortak yardımcılar: avatar / kullanıcı profili =====
+    function styleAvatarElement(el, photoURL, username) {
+        if (!el) return;
+        if (photoURL) {
+            el.style.backgroundImage = `url("${photoURL}")`;
+            el.textContent = "";
+        } else {
+            el.style.backgroundImage = "none";
+            el.textContent = (username || "?").charAt(0).toUpperCase();
+        }
+    }
+
+    function fetchUserProfile(uid) {
+        if (userProfileCache[uid]) {
+            return Promise.resolve(userProfileCache[uid]);
+        }
+        return database.ref(`users/${uid}`).once('value').then(snapshot => {
+            const data = snapshot.val() || {};
+            const profile = {
+                uid: uid,
+                username: data.username || "kullanici",
+                photoURL: data.photoURL || null
+            };
+            userProfileCache[uid] = profile;
+            return profile;
+        });
+    }
+
+    function invalidateUserProfileCache(uid) {
+        delete userProfileCache[uid];
+    }
+
+    function showOverlay(id) {
+        document.getElementById(id).classList.add('active');
+    }
+
+    function hideOverlay(id) {
+        document.getElementById(id).classList.remove('active');
+    }
+
+    function resizeImageFile(file, maxDim, quality) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = () => reject(new Error("read-failed"));
+            reader.onload = () => {
+                const img = new Image();
+                img.onerror = () => reject(new Error("decode-failed"));
+                img.onload = () => {
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > height) {
+                        if (width > maxDim) {
+                            height = Math.round(height * (maxDim / width));
+                            width = maxDim;
+                        }
+                    } else if (height > maxDim) {
+                        width = Math.round(width * (maxDim / height));
+                        height = maxDim;
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    canvas.toBlob(blob => {
+                        if (blob) resolve(blob);
+                        else reject(new Error("blob-failed"));
+                    }, 'image/jpeg', quality || 0.85);
+                };
+                img.src = reader.result;
+            };
+            reader.readAsDataURL(file);
+        });
     }
 
     function setAuthError(message) {
@@ -747,6 +1498,39 @@
             : authUser.updateProfile({ displayName: cleanUsername }).catch(() => {});
 
         return profilePromise.then(() => database.ref().update(updates));
+    }
+
+    // ===== Profil fotoğrafı =====
+    function triggerPhotoUpload() {
+        if (!currentUid) return;
+        document.getElementById('photo-input').click();
+    }
+
+    function handlePhotoSelected(event) {
+        const file = event.target.files[0];
+        event.target.value = "";
+        if (!file || !currentUid) return;
+
+        resizeImageFile(file, 500, 0.85)
+            .then(blob => uploadProfilePhoto(blob))
+            .catch(() => {
+                alert("Fotoğraf işlenemedi. Lütfen başka bir resim dene.");
+            });
+    }
+
+    function uploadProfilePhoto(blob) {
+        const ref = storage.ref(`profile_photos/${currentUid}/photo.jpg`);
+        return ref.put(blob, { contentType: 'image/jpeg' })
+            .then(snapshot => snapshot.ref.getDownloadURL())
+            .then(url => database.ref(`users/${currentUid}`).update({ photoURL: url }).then(() => url))
+            .then(url => {
+                currentPhotoURL = url;
+                invalidateUserProfileCache(currentUid);
+                styleAvatarElement(document.getElementById('own-avatar-inner'), url, currentUser);
+            })
+            .catch(() => {
+                alert("Fotoğraf yüklenemedi. Firebase Storage'ın etkin olduğundan ve kurallarının doğru olduğundan emin ol.");
+            });
     }
 
     function registerUser() {
@@ -806,6 +1590,9 @@
     function logoutUser() {
         detachChatListener();
         detachConversationList();
+        detachOwnFollowListeners();
+        detachStoriesListener();
+        detachReelsListener();
         auth.signOut().then(() => window.location.reload());
     }
 
@@ -826,12 +1613,21 @@
             document.getElementById('profile-display-name').innerText = currentUser;
             document.getElementById('header-username').innerText = currentUser;
 
+            fetchUserProfile(currentUid).then(profile => {
+                currentPhotoURL = profile.photoURL;
+                styleAvatarElement(document.getElementById('own-avatar-inner'), profile.photoURL, currentUser);
+            });
+
             listenToConversationList();
+            listenToOwnFollowStats();
+            listenToStories();
+            listenToReels();
         } else {
             authScreen.style.display = 'flex';
             mainApp.style.display = 'none';
             currentUser = null;
             currentUid = null;
+            currentPhotoURL = null;
             activeConversationId = null;
             activeRecipient = null;
         }
@@ -850,6 +1646,9 @@
         } else if (tabName === 'chat') {
             document.getElementById('chat-page').classList.add('active');
             scrollToBottom();
+        } else if (tabName === 'search') {
+            document.getElementById('search-page').classList.add('active');
+            document.getElementById('nav-search').classList.add('active');
         } else if (tabName === 'profile') {
             document.getElementById('profile-page').classList.add('active');
             document.getElementById('nav-profile').classList.add('active');
@@ -1117,6 +1916,644 @@
             button.classList.toggle('active', button.dataset.conversationId === activeConversationId);
         });
     }
+
+    // ===== Takip sistemi (followers / following) =====
+    function detachOwnFollowListeners() {
+        if (ownFollowersRef) ownFollowersRef.off('value');
+        if (ownFollowingRef) ownFollowingRef.off('value');
+        ownFollowersRef = null;
+        ownFollowingRef = null;
+    }
+
+    function listenToOwnFollowStats() {
+        if (!currentUid) return;
+        detachOwnFollowListeners();
+
+        ownFollowersRef = database.ref(`followers/${currentUid}`);
+        ownFollowersRef.on('value', snapshot => {
+            document.getElementById('stat-followers').textContent = snapshot.numChildren();
+        });
+
+        ownFollowingRef = database.ref(`following/${currentUid}`);
+        ownFollowingRef.on('value', snapshot => {
+            document.getElementById('stat-following').textContent = snapshot.numChildren();
+        });
+    }
+
+    function isFollowingUser(targetUid) {
+        if (!currentUid) return Promise.resolve(false);
+        return database.ref(`following/${currentUid}/${targetUid}`).once('value').then(s => s.exists());
+    }
+
+    function toggleFollow(targetUid) {
+        if (!currentUid || !targetUid || targetUid === currentUid) return Promise.resolve(false);
+
+        return isFollowingUser(targetUid).then(following => {
+            const updates = {};
+            if (following) {
+                updates[`following/${currentUid}/${targetUid}`] = null;
+                updates[`followers/${targetUid}/${currentUid}`] = null;
+            } else {
+                updates[`following/${currentUid}/${targetUid}`] = true;
+                updates[`followers/${targetUid}/${currentUid}`] = true;
+            }
+            return database.ref().update(updates).then(() => !following);
+        });
+    }
+
+    function updateFollowButtonState(targetUid) {
+        const btn = document.getElementById('view-follow-btn');
+        isFollowingUser(targetUid).then(following => {
+            btn.textContent = following ? "Takip Ediliyor" : "Takip Et";
+            btn.classList.toggle('following', following);
+        });
+    }
+
+    function toggleFollowViewed() {
+        if (!viewedUid) return;
+        toggleFollow(viewedUid).then(() => {
+            updateFollowButtonState(viewedUid);
+            refreshViewedStats(viewedUid);
+        });
+    }
+
+    function refreshViewedStats(uid) {
+        database.ref(`followers/${uid}`).once('value').then(s => {
+            document.getElementById('view-stat-followers').textContent = s.numChildren();
+        });
+        database.ref(`following/${uid}`).once('value').then(s => {
+            document.getElementById('view-stat-following').textContent = s.numChildren();
+        });
+    }
+
+    function messageViewed() {
+        if (!viewedUid || !viewedUsername) return;
+        const uid = viewedUid;
+        const username = viewedUsername;
+        closeProfileView();
+        startConversation(uid, username);
+    }
+
+    function openProfileView(uid, username) {
+        if (!uid) return;
+        if (uid === currentUid) {
+            closeListModal();
+            closeProfileView();
+            switchTab('profile');
+            return;
+        }
+
+        viewedUid = uid;
+        viewedUsername = username;
+
+        document.getElementById('view-username').innerText = "@" + username;
+        document.getElementById('view-display-name').innerText = username;
+        document.getElementById('view-following-btn').onclick = () => openListModal('following', uid);
+        document.getElementById('view-followers-btn').onclick = () => openListModal('followers', uid);
+        styleAvatarElement(document.getElementById('view-avatar-inner'), null, username);
+
+        fetchUserProfile(uid).then(profile => {
+            styleAvatarElement(document.getElementById('view-avatar-inner'), profile.photoURL, username);
+        });
+
+        refreshViewedStats(uid);
+        updateFollowButtonState(uid);
+        showOverlay('profile-view-overlay');
+    }
+
+    function closeProfileView() {
+        hideOverlay('profile-view-overlay');
+    }
+
+    // ===== Takipçi / takip edilen listesi =====
+    function openListModal(type, uid) {
+        const targetUid = uid || currentUid;
+        const ref = type === 'followers' ? database.ref(`followers/${targetUid}`) : database.ref(`following/${targetUid}`);
+
+        document.getElementById('list-modal-title').innerText = type === 'followers' ? "Takipçiler" : "Takip Edilenler";
+        const resultsBox = document.getElementById('list-modal-results');
+        resultsBox.innerHTML = `<div class="search-hint">Yükleniyor...</div>`;
+        showOverlay('list-modal-overlay');
+
+        ref.once('value').then(snapshot => {
+            const uids = [];
+            snapshot.forEach(child => uids.push(child.key));
+
+            if (uids.length === 0) {
+                resultsBox.innerHTML = `<div class="search-empty">${type === 'followers' ? 'Henüz takipçi yok.' : 'Henüz kimse takip edilmiyor.'}</div>`;
+                return;
+            }
+
+            Promise.all(uids.map(id => fetchUserProfile(id))).then(profiles => {
+                resultsBox.innerHTML = "";
+                profiles.forEach(profile => resultsBox.appendChild(buildUserRow(profile)));
+            });
+        });
+    }
+
+    function closeListModal() {
+        hideOverlay('list-modal-overlay');
+    }
+
+    function buildUserRow(profile) {
+        const row = document.createElement('div');
+        row.className = 'user-row';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'row-avatar';
+        styleAvatarElement(avatar, profile.photoURL, profile.username);
+
+        const info = document.createElement('div');
+        info.className = 'user-row-info';
+        const name = document.createElement('div');
+        name.className = 'user-row-name';
+        name.textContent = "@" + profile.username;
+        info.appendChild(name);
+
+        row.appendChild(avatar);
+        row.appendChild(info);
+
+        if (profile.uid !== currentUid) {
+            const followBtn = document.createElement('button');
+            followBtn.className = 'row-follow-btn';
+            followBtn.type = 'button';
+            isFollowingUser(profile.uid).then(following => {
+                followBtn.textContent = following ? "Takipte" : "Takip Et";
+                followBtn.classList.toggle('following', following);
+            });
+            followBtn.onclick = (e) => {
+                e.stopPropagation();
+                toggleFollow(profile.uid).then(nowFollowing => {
+                    followBtn.textContent = nowFollowing ? "Takipte" : "Takip Et";
+                    followBtn.classList.toggle('following', nowFollowing);
+                });
+            };
+            row.appendChild(followBtn);
+        }
+
+        row.onclick = () => openProfileView(profile.uid, profile.username);
+
+        return row;
+    }
+
+    // ===== Kullanıcı arama =====
+    let searchDebounceTimer = null;
+    function handleSearchInput() {
+        clearTimeout(searchDebounceTimer);
+        const query = normalizeUsername(document.getElementById('search-input').value);
+        const resultsBox = document.getElementById('search-results');
+
+        if (!query) {
+            resultsBox.innerHTML = `<div class="search-hint">Bir kullanıcı adı yazarak hesap ara.</div>`;
+            return;
+        }
+
+        searchDebounceTimer = setTimeout(() => runUserSearch(query), 300);
+    }
+
+    function runUserSearch(query) {
+        const resultsBox = document.getElementById('search-results');
+        resultsBox.innerHTML = `<div class="search-hint">Aranıyor...</div>`;
+
+        database.ref('usernames')
+            .orderByChild('username')
+            .startAt(query)
+            .endAt(query + "\uf8ff")
+            .limitToFirst(20)
+            .once('value')
+            .then(snapshot => {
+                const uids = [];
+                snapshot.forEach(child => {
+                    const data = child.val();
+                    if (data && data.uid) uids.push(data.uid);
+                });
+
+                if (uids.length === 0) {
+                    resultsBox.innerHTML = `<div class="search-empty">Kullanıcı bulunamadı.</div>`;
+                    return;
+                }
+
+                return Promise.all(uids.map(id => fetchUserProfile(id))).then(profiles => {
+                    resultsBox.innerHTML = "";
+                    profiles.forEach(profile => resultsBox.appendChild(buildUserRow(profile)));
+                });
+            })
+            .catch(() => {
+                resultsBox.innerHTML = `<div class="search-empty">Arama yapılamadı. Firebase kurallarını ve "usernames" indexini kontrol et.</div>`;
+            });
+    }
+
+    // ===== Hikayeler (Stories) =====
+    function detachStoriesListener() {
+        if (storiesRootRef) storiesRootRef.off('value');
+        storiesRootRef = null;
+    }
+
+    function listenToStories() {
+        detachStoriesListener();
+        storiesRootRef = database.ref('stories');
+        storiesRootRef.on('value', snapshot => renderStoriesBar(snapshot));
+    }
+
+    function renderStoriesBar(snapshot) {
+        const now = Date.now();
+        const byUid = {};
+
+        snapshot.forEach(userSnap => {
+            const uid = userSnap.key;
+            const items = [];
+            userSnap.forEach(storySnap => {
+                const data = storySnap.val();
+                if (data && data.timestamp && (now - data.timestamp) < STORY_LIFETIME_MS) {
+                    items.push({ id: storySnap.key, imageUrl: data.imageUrl, timestamp: data.timestamp, username: data.username });
+                }
+            });
+            if (items.length > 0) {
+                items.sort((a, b) => a.timestamp - b.timestamp);
+                byUid[uid] = items;
+            }
+        });
+
+        storyFeedByUid = byUid;
+
+        storyUserOrder = Object.keys(byUid)
+            .filter(uid => uid !== currentUid)
+            .sort((a, b) => byUid[b][byUid[b].length - 1].timestamp - byUid[a][byUid[a].length - 1].timestamp);
+
+        const bar = document.getElementById('stories-bar');
+        bar.innerHTML = "";
+
+        const ownHasStory = !!byUid[currentUid];
+        const ownItem = document.createElement('button');
+        ownItem.className = 'story-item';
+        ownItem.type = 'button';
+        ownItem.innerHTML = `
+            <div class="story-ring ${ownHasStory ? 'has-story' : ''}">
+                <div class="story-avatar-inner" id="own-story-avatar"></div>
+                <div class="story-add-badge"><i class="fa-solid fa-plus"></i></div>
+            </div>
+            <span class="story-username">Hikayen</span>
+        `;
+        ownItem.onclick = () => {
+            if (ownHasStory) {
+                openStoryViewerForUser(currentUid);
+            } else {
+                triggerStoryUpload();
+            }
+        };
+        bar.appendChild(ownItem);
+        styleAvatarElement(ownItem.querySelector('#own-story-avatar'), currentPhotoURL, currentUser);
+        ownItem.querySelector('.story-add-badge').onclick = (e) => {
+            e.stopPropagation();
+            triggerStoryUpload();
+        };
+
+        storyUserOrder.forEach(uid => {
+            const username = byUid[uid][byUid[uid].length - 1].username || "kullanici";
+            const item = document.createElement('button');
+            item.className = 'story-item';
+            item.type = 'button';
+            const avatarId = 'story-avatar-' + uid;
+            item.innerHTML = `
+                <div class="story-ring has-story">
+                    <div class="story-avatar-inner" id="${avatarId}"></div>
+                </div>
+                <span class="story-username">@${username}</span>
+            `;
+            item.onclick = () => openStoryViewerForUser(uid);
+            bar.appendChild(item);
+
+            fetchUserProfile(uid).then(profile => {
+                const el = document.getElementById(avatarId);
+                if (el) styleAvatarElement(el, profile.photoURL, username);
+            });
+        });
+    }
+
+    function triggerStoryUpload() {
+        if (!currentUid) return;
+        document.getElementById('story-input').click();
+    }
+
+    function handleStorySelected(event) {
+        const file = event.target.files[0];
+        event.target.value = "";
+        if (!file || !currentUid) return;
+
+        resizeImageFile(file, 1080, 0.85)
+            .then(blob => uploadStory(blob))
+            .catch(() => alert("Hikaye işlenemedi. Lütfen başka bir resim dene."));
+    }
+
+    function uploadStory(blob) {
+        const storyId = database.ref(`stories/${currentUid}`).push().key;
+        const ref = storage.ref(`stories/${currentUid}/${storyId}.jpg`);
+
+        return ref.put(blob, { contentType: 'image/jpeg' })
+            .then(snapshot => snapshot.ref.getDownloadURL())
+            .then(url => database.ref(`stories/${currentUid}/${storyId}`).set({
+                imageUrl: url,
+                timestamp: Date.now(),
+                username: currentUser
+            }))
+            .catch(() => alert("Hikaye yüklenemedi. Firebase Storage kurallarını kontrol et."));
+    }
+
+    function openStoryViewerForUser(uid) {
+        const order = storyFeedByUid[currentUid] ? [currentUid, ...storyUserOrder] : storyUserOrder.slice();
+        const index = order.indexOf(uid);
+        if (index === -1) return;
+
+        storyViewerOrder = order;
+        activeStoryUserIndex = index;
+        activeStoryIndex = 0;
+        showOverlay('story-viewer-overlay');
+        loadStory();
+    }
+
+    function loadStory() {
+        const uid = storyViewerOrder[activeStoryUserIndex];
+        if (!uid) { closeStoryViewer(); return; }
+
+        const items = storyFeedByUid[uid] || [];
+        if (activeStoryIndex >= items.length) { goToNextStoryUser(); return; }
+        if (activeStoryIndex < 0) { goToPrevStoryUser(); return; }
+
+        const story = items[activeStoryIndex];
+        document.getElementById('story-viewer-image').src = story.imageUrl;
+        document.getElementById('story-viewer-username').textContent = "@" + story.username;
+
+        fetchUserProfile(uid).then(profile => {
+            styleAvatarElement(document.getElementById('story-viewer-avatar'), profile.photoURL, story.username);
+        });
+
+        buildStoryProgressBar(items.length, activeStoryIndex);
+        startStoryTimer();
+    }
+
+    function buildStoryProgressBar(count, activeIndex) {
+        const bar = document.getElementById('story-progress');
+        bar.innerHTML = "";
+        for (let i = 0; i < count; i++) {
+            const seg = document.createElement('div');
+            seg.className = 'story-progress-seg';
+            if (i < activeIndex) seg.classList.add('done');
+            const fill = document.createElement('div');
+            fill.className = 'story-progress-fill';
+            fill.id = 'story-fill-' + i;
+            seg.appendChild(fill);
+            bar.appendChild(seg);
+        }
+    }
+
+    function startStoryTimer() {
+        clearStoryTimer();
+        const fill = document.getElementById('story-fill-' + activeStoryIndex);
+        if (fill) {
+            requestAnimationFrame(() => {
+                fill.style.transition = `width ${STORY_DURATION_MS}ms linear`;
+                fill.style.width = '100%';
+            });
+        }
+        storyTimer = setTimeout(() => storyNext(), STORY_DURATION_MS);
+    }
+
+    function clearStoryTimer() {
+        if (storyTimer) {
+            clearTimeout(storyTimer);
+            storyTimer = null;
+        }
+    }
+
+    function storyNext() {
+        clearStoryTimer();
+        activeStoryIndex += 1;
+        loadStory();
+    }
+
+    function storyPrev() {
+        clearStoryTimer();
+        activeStoryIndex -= 1;
+        loadStory();
+    }
+
+    function goToNextStoryUser() {
+        activeStoryUserIndex += 1;
+        activeStoryIndex = 0;
+        if (activeStoryUserIndex >= storyViewerOrder.length) {
+            closeStoryViewer();
+        } else {
+            loadStory();
+        }
+    }
+
+    function goToPrevStoryUser() {
+        activeStoryUserIndex -= 1;
+        if (activeStoryUserIndex < 0) {
+            closeStoryViewer();
+            return;
+        }
+        const items = storyFeedByUid[storyViewerOrder[activeStoryUserIndex]] || [];
+        activeStoryIndex = Math.max(items.length - 1, 0);
+        loadStory();
+    }
+
+    function closeStoryViewer() {
+        clearStoryTimer();
+        hideOverlay('story-viewer-overlay');
+        activeStoryUserIndex = -1;
+        activeStoryIndex = 0;
+    }
+
+    // ===== Reels =====
+    function detachReelsListener() {
+        if (reelsRootRef) reelsRootRef.off('value');
+        reelsRootRef = null;
+    }
+
+    function listenToReels() {
+        detachReelsListener();
+        reelsRootRef = database.ref('reels').orderByChild('timestamp').limitToLast(50);
+        reelsRootRef.on('value', snapshot => renderReelsFeed(snapshot));
+    }
+
+    function renderReelsFeed(snapshot) {
+        const feed = document.getElementById('reels-feed');
+        const items = [];
+        snapshot.forEach(child => items.push({ id: child.key, ...child.val() }));
+        items.reverse();
+
+        feed.innerHTML = "";
+
+        if (items.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'reels-container';
+            empty.innerHTML = `
+                <i class="fa-solid fa-clapperboard"></i>
+                <h2>Henüz bir reels bulunmamakta</h2>
+                <p style="font-size: 14px;">Sağ üstteki + butonuna basarak ilk reels'i sen ekle.</p>
+            `;
+            feed.appendChild(empty);
+            return;
+        }
+
+        items.forEach(item => feed.appendChild(buildReelItem(item)));
+        observeReelVideos();
+    }
+
+    function buildReelItem(item) {
+        const wrap = document.createElement('div');
+        wrap.className = 'reel-item';
+
+        const video = document.createElement('video');
+        video.src = item.videoUrl;
+        video.loop = true;
+        video.muted = true;
+        video.playsInline = true;
+        video.setAttribute('playsinline', '');
+        video.onclick = () => {
+            if (video.paused) video.play().catch(() => {}); else video.pause();
+        };
+        wrap.appendChild(video);
+
+        const overlay = document.createElement('div');
+        overlay.className = 'reel-overlay';
+        const userLine = document.createElement('div');
+        userLine.className = 'reel-user';
+        userLine.textContent = "@" + (item.username || "kullanici");
+        overlay.appendChild(userLine);
+        if (item.caption) {
+            const captionLine = document.createElement('div');
+            captionLine.className = 'reel-caption';
+            captionLine.textContent = item.caption;
+            overlay.appendChild(captionLine);
+        }
+        wrap.appendChild(overlay);
+
+        const sideActions = document.createElement('div');
+        sideActions.className = 'reel-side-actions';
+        const likeBtn = document.createElement('button');
+        likeBtn.className = 'reel-like-btn';
+        likeBtn.type = 'button';
+        likeBtn.innerHTML = `<i class="fa-solid fa-heart"></i><span class="reel-like-count">0</span>`;
+        likeBtn.onclick = () => toggleReelLike(item.id, likeBtn);
+        sideActions.appendChild(likeBtn);
+        wrap.appendChild(sideActions);
+
+        listenToReelLikes(item.id, likeBtn);
+
+        return wrap;
+    }
+
+    function listenToReelLikes(reelId, likeBtn) {
+        if (reelLikeListeners[reelId]) {
+            reelLikeListeners[reelId].ref.off('value', reelLikeListeners[reelId].handler);
+        }
+        const ref = database.ref(`reels/${reelId}/likes`);
+        const handler = snapshot => {
+            likeBtn.querySelector('.reel-like-count').textContent = snapshot.numChildren();
+            likeBtn.classList.toggle('liked', currentUid ? snapshot.hasChild(currentUid) : false);
+        };
+        ref.on('value', handler);
+        reelLikeListeners[reelId] = { ref, handler };
+    }
+
+    function toggleReelLike(reelId, likeBtn) {
+        if (!currentUid) return;
+        const ref = database.ref(`reels/${reelId}/likes/${currentUid}`);
+        ref.once('value')
+            .then(snapshot => snapshot.exists() ? ref.remove() : ref.set(true))
+            .then(() => {
+                likeBtn.classList.add('bump');
+                setTimeout(() => likeBtn.classList.remove('bump'), 200);
+            });
+    }
+
+    let reelObserver = null;
+    function observeReelVideos() {
+        if (reelObserver) reelObserver.disconnect();
+        reelObserver = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                const video = entry.target;
+                if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+                    video.play().catch(() => {});
+                } else {
+                    video.pause();
+                }
+            });
+        }, { threshold: [0, 0.6, 1] });
+
+        document.querySelectorAll('#reels-feed video').forEach(video => reelObserver.observe(video));
+    }
+
+    function triggerReelUpload() {
+        if (!currentUid) return;
+        document.getElementById('reel-input').click();
+    }
+
+    function handleReelSelected(event) {
+        const file = event.target.files[0];
+        event.target.value = "";
+        if (!file) return;
+
+        if (file.size > 60 * 1024 * 1024) {
+            alert("Video 60MB'den küçük olmalı.");
+            return;
+        }
+
+        pendingReelFile = file;
+        document.getElementById('reel-preview-video').src = URL.createObjectURL(file);
+        document.getElementById('reel-caption-input').value = "";
+        document.getElementById('reel-upload-status').textContent = "";
+        document.getElementById('reel-share-confirm-btn').disabled = false;
+        showOverlay('reel-share-overlay');
+    }
+
+    function cancelReelShare() {
+        pendingReelFile = null;
+        document.getElementById('reel-preview-video').src = "";
+        hideOverlay('reel-share-overlay');
+    }
+
+    function shareReel() {
+        if (!pendingReelFile || !currentUid) return;
+
+        const file = pendingReelFile;
+        const caption = document.getElementById('reel-caption-input').value.trim();
+        const reelId = database.ref('reels').push().key;
+        const ref = storage.ref(`reels/${currentUid}/${reelId}.mp4`);
+        const confirmBtn = document.getElementById('reel-share-confirm-btn');
+        const statusEl = document.getElementById('reel-upload-status');
+
+        confirmBtn.disabled = true;
+        statusEl.textContent = "Yükleniyor... 0%";
+
+        const task = ref.put(file, { contentType: file.type || 'video/mp4' });
+
+        task.on('state_changed', snapshot => {
+            const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+            statusEl.textContent = `Yükleniyor... ${pct}%`;
+        }, () => {
+            statusEl.textContent = "Yükleme başarısız oldu.";
+            confirmBtn.disabled = false;
+        }, () => {
+            task.snapshot.ref.getDownloadURL().then(url => database.ref(`reels/${reelId}`).set({
+                uid: currentUid,
+                username: currentUser,
+                videoUrl: url,
+                caption: caption,
+                timestamp: Date.now()
+            })).then(() => {
+                pendingReelFile = null;
+                document.getElementById('reel-preview-video').src = "";
+                hideOverlay('reel-share-overlay');
+            }).catch(() => {
+                statusEl.textContent = "Paylaşılamadı, tekrar dene.";
+                confirmBtn.disabled = false;
+            });
+        });
+    }
+
 </script>
 </body>
 </html>
