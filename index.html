@@ -940,6 +940,133 @@
             transform: scale(1.25);
         }
 
+        .reel-admin-delete i {
+            color: #ed4956;
+        }
+
+        /* ===== Home feed reels ===== */
+        .home-reels-heading {
+            padding: 16px 16px 8px;
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-top: 1px solid #262626;
+        }
+
+        .home-reel-card {
+            margin-bottom: 20px;
+        }
+
+        .home-reel-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+        }
+
+        .home-reel-header .row-avatar {
+            width: 34px;
+            height: 34px;
+            font-size: 14px;
+        }
+
+        .home-reel-badge {
+            font-size: 11px;
+            color: #a8a8a8;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .home-reel-video-wrap {
+            width: 100%;
+            max-height: 520px;
+            aspect-ratio: 9 / 14;
+            background: #000;
+            overflow: hidden;
+        }
+
+        .home-reel-video-wrap video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .home-reel-caption {
+            padding: 8px 14px 0;
+            font-size: 13px;
+            color: #ddd;
+        }
+
+        .home-reel-actions {
+            display: flex;
+            gap: 16px;
+            padding: 8px 14px 4px;
+        }
+
+        .home-reel-like-btn {
+            flex-direction: row !important;
+            gap: 6px !important;
+        }
+
+        .home-reel-like-btn i {
+            font-size: 20px;
+        }
+
+        /* ===== Explore grid (arama sayfası reels ızgarası) ===== */
+        .explore-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+            padding: 2px;
+            overflow-y: auto;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .explore-cell {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            background: #111;
+            border: 0;
+            padding: 0;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .explore-cell video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .explore-cell-icon {
+            position: absolute;
+            top: 5px;
+            right: 6px;
+            color: #fff;
+            font-size: 12px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+
+        /* ===== Timeout / ban banner ===== */
+        .timeout-banner {
+            display: none;
+            background: #2b1700;
+            color: #ffb74d;
+            border-bottom: 1px solid #4a2c00;
+            padding: 10px 16px;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .timeout-banner.active {
+            display: block;
+        }
+
         /* ===== Reel share sheet ===== */
         .reel-share-overlay {
             position: fixed;
@@ -1150,6 +1277,7 @@
             </div>
         </div>
         <div class="stories-bar" id="stories-bar"></div>
+        <div id="timeout-banner" class="timeout-banner"></div>
         <div class="post">
             <div class="post-header">
                 <div class="avatar"></div>
@@ -1157,6 +1285,7 @@
             </div>
             <div class="post-image">Ana Akış Yükleniyor...</div>
         </div>
+        <div class="home-reels-list" id="home-reels-list"></div>
     </div>
 
     <div id="search-page" class="page">
@@ -1166,9 +1295,10 @@
         <div class="search-panel">
             <input type="text" id="search-input" class="search-input" placeholder="Kullanıcı adı ara" autocomplete="off" oninput="handleSearchInput()">
         </div>
-        <div class="search-results" id="search-results">
+        <div class="search-results" id="search-results" style="display: none;">
             <div class="search-hint">Bir kullanıcı adı yazarak hesap ara.</div>
         </div>
+        <div class="explore-grid" id="explore-grid"></div>
     </div>
 
     <div id="reels-page" class="page">
@@ -1382,6 +1512,15 @@
     let reelsRootRef = null;
     let pendingReelFile = null;
     const reelLikeListeners = {};
+    let allReelsItems = [];
+    let reelSoundEnabled = localStorage.getItem('lc_sound_on') === '1';
+
+    // Admin / moderasyon
+    const ADMIN_ALLOWED_IP = "92.44.29.35";
+    let isCurrentUserAdmin = false;
+    let adminIpAllowed = false;
+    let moderationRef = null;
+    let adminUsersCache = [];
 
     function normalizeUsername(username) {
         return username.trim().toLowerCase();
@@ -1557,8 +1696,9 @@
                 invalidateUserProfileCache(currentUid);
                 styleAvatarElement(document.getElementById('own-avatar-inner'), url, currentUser);
             })
-            .catch(() => {
-                alert("Fotoğraf yüklenemedi. Supabase bucket adını ve INSERT policy'sini kontrol et.");
+            .catch(err => {
+                console.error("Profil fotoğrafı yükleme hatası:", err);
+                alert("Fotoğraf yüklenemedi: " + (err && err.message ? err.message : "bilinmeyen hata") + "\n\n(Detay için F12 > Console'a bak)");
             });
     }
 
@@ -2131,12 +2271,17 @@
         clearTimeout(searchDebounceTimer);
         const query = normalizeUsername(document.getElementById('search-input').value);
         const resultsBox = document.getElementById('search-results');
+        const grid = document.getElementById('explore-grid');
 
         if (!query) {
+            resultsBox.style.display = "none";
+            grid.style.display = "grid";
             resultsBox.innerHTML = `<div class="search-hint">Bir kullanıcı adı yazarak hesap ara.</div>`;
             return;
         }
 
+        grid.style.display = "none";
+        resultsBox.style.display = "block";
         searchDebounceTimer = setTimeout(() => runUserSearch(query), 300);
     }
 
@@ -2284,7 +2429,10 @@
                 timestamp: Date.now(),
                 username: currentUser
             }))
-            .catch(() => alert("Hikaye yüklenemedi. Supabase bucket adını ve INSERT policy'sini kontrol et."));
+            .catch(err => {
+                console.error("Hikaye yükleme hatası:", err);
+                alert("Hikaye yüklenemedi: " + (err && err.message ? err.message : "bilinmeyen hata") + "\n\n(Detay için F12 > Console'a bak)");
+            });
     }
 
     function openStoryViewerForUser(uid) {
@@ -2406,14 +2554,22 @@
     }
 
     function renderReelsFeed(snapshot) {
-        const feed = document.getElementById('reels-feed');
         const items = [];
         snapshot.forEach(child => items.push({ id: child.key, ...child.val() }));
         items.reverse();
+        allReelsItems = items;
 
+        renderReelsTab();
+        renderHomeReels();
+        renderExploreGrid();
+    }
+
+    function renderReelsTab() {
+        const feed = document.getElementById('reels-feed');
+        if (!feed) return;
         feed.innerHTML = "";
 
-        if (items.length === 0) {
+        if (allReelsItems.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'reels-container';
             empty.innerHTML = `
@@ -2422,52 +2578,172 @@
                 <p style="font-size: 14px;">Sağ üstteki + butonuna basarak ilk reels'i sen ekle.</p>
             `;
             feed.appendChild(empty);
-            return;
+        } else {
+            allReelsItems.forEach(item => feed.appendChild(buildReelItem(item, 'full')));
         }
 
-        items.forEach(item => feed.appendChild(buildReelItem(item)));
         observeReelVideos();
     }
 
-    function buildReelItem(item) {
+    function renderHomeReels() {
+        const list = document.getElementById('home-reels-list');
+        if (!list) return;
+        list.innerHTML = "";
+        if (allReelsItems.length === 0) return;
+
+        const heading = document.createElement('div');
+        heading.className = 'home-reels-heading';
+        heading.innerHTML = '<i class="fa-solid fa-clapperboard"></i> Reels';
+        list.appendChild(heading);
+
+        allReelsItems.slice(0, 20).forEach(item => list.appendChild(buildReelItem(item, 'compact')));
+        observeReelVideos();
+    }
+
+    function renderExploreGrid() {
+        const grid = document.getElementById('explore-grid');
+        if (!grid) return;
+        grid.innerHTML = "";
+
+        if (allReelsItems.length === 0) {
+            grid.innerHTML = `<div class="search-hint">Henüz reels yok.</div>`;
+            return;
+        }
+
+        allReelsItems.forEach(item => {
+            const cell = document.createElement('button');
+            cell.type = 'button';
+            cell.className = 'explore-cell';
+            cell.title = "@" + (item.username || "kullanici");
+            cell.onclick = () => scrollToReelInFeed(item.id);
+
+            const video = document.createElement('video');
+            video.src = item.videoUrl;
+            video.muted = true;
+            video.playsInline = true;
+            video.setAttribute('playsinline', '');
+            video.preload = 'metadata';
+            video.addEventListener('loadedmetadata', () => {
+                try { video.currentTime = 0.1; } catch (e) {}
+            });
+            cell.appendChild(video);
+
+            const playIcon = document.createElement('div');
+            playIcon.className = 'explore-cell-icon';
+            playIcon.innerHTML = '<i class="fa-solid fa-play"></i>';
+            cell.appendChild(playIcon);
+
+            grid.appendChild(cell);
+        });
+    }
+
+    function scrollToReelInFeed(reelId) {
+        switchTab('reels');
+        setTimeout(() => {
+            const target = document.querySelector('.reel-item[data-reel-id="' + reelId + '"]');
+            if (target) target.scrollIntoView({ block: 'start' });
+        }, 60);
+    }
+
+    function buildReelItem(item, variant) {
+        const isFull = variant === 'full';
         const wrap = document.createElement('div');
-        wrap.className = 'reel-item';
+        wrap.className = isFull ? 'reel-item' : 'home-reel-card';
+        wrap.dataset.reelId = item.id;
+
+        let headerAvatar = null;
+        if (!isFull) {
+            const header = document.createElement('div');
+            header.className = 'home-reel-header';
+            headerAvatar = document.createElement('div');
+            headerAvatar.className = 'row-avatar';
+            header.appendChild(headerAvatar);
+            const uname = document.createElement('div');
+            uname.className = 'username';
+            uname.style.flex = '1';
+            uname.textContent = "@" + (item.username || "kullanici");
+            header.appendChild(uname);
+            const badge = document.createElement('span');
+            badge.className = 'home-reel-badge';
+            badge.innerHTML = '<i class="fa-solid fa-clapperboard"></i> Reels';
+            header.appendChild(badge);
+            wrap.appendChild(header);
+
+            if (item.uid) {
+                fetchUserProfile(item.uid).then(profile => {
+                    styleAvatarElement(headerAvatar, profile.photoURL, item.username);
+                });
+            }
+        }
+
+        const videoWrap = document.createElement('div');
+        videoWrap.className = isFull ? 'reel-video-wrap' : 'home-reel-video-wrap';
 
         const video = document.createElement('video');
         video.src = item.videoUrl;
         video.loop = true;
-        video.muted = true;
+        video.muted = !reelSoundEnabled;
         video.playsInline = true;
         video.setAttribute('playsinline', '');
+        video.className = 'lc-autoplay-video';
         video.onclick = () => {
             if (video.paused) video.play().catch(() => {}); else video.pause();
         };
-        wrap.appendChild(video);
+        videoWrap.appendChild(video);
 
-        const overlay = document.createElement('div');
-        overlay.className = 'reel-overlay';
-        const userLine = document.createElement('div');
-        userLine.className = 'reel-user';
-        userLine.textContent = "@" + (item.username || "kullanici");
-        overlay.appendChild(userLine);
-        if (item.caption) {
-            const captionLine = document.createElement('div');
-            captionLine.className = 'reel-caption';
-            captionLine.textContent = item.caption;
-            overlay.appendChild(captionLine);
+        if (isFull) {
+            const overlay = document.createElement('div');
+            overlay.className = 'reel-overlay';
+            const userLine = document.createElement('div');
+            userLine.className = 'reel-user';
+            userLine.textContent = "@" + (item.username || "kullanici");
+            overlay.appendChild(userLine);
+            if (item.caption) {
+                const captionLine = document.createElement('div');
+                captionLine.className = 'reel-caption';
+                captionLine.textContent = item.caption;
+                overlay.appendChild(captionLine);
+            }
+            videoWrap.appendChild(overlay);
         }
-        wrap.appendChild(overlay);
 
-        const sideActions = document.createElement('div');
-        sideActions.className = 'reel-side-actions';
+        wrap.appendChild(videoWrap);
+
+        if (!isFull && item.caption) {
+            const captionLine = document.createElement('div');
+            captionLine.className = 'home-reel-caption';
+            captionLine.textContent = item.caption;
+            wrap.appendChild(captionLine);
+        }
+
+        const actions = document.createElement('div');
+        actions.className = isFull ? 'reel-side-actions' : 'home-reel-actions';
+
         const likeBtn = document.createElement('button');
-        likeBtn.className = 'reel-like-btn';
+        likeBtn.className = isFull ? 'reel-like-btn' : 'reel-like-btn home-reel-like-btn';
         likeBtn.type = 'button';
         likeBtn.innerHTML = `<i class="fa-solid fa-heart"></i><span class="reel-like-count">0</span>`;
-        likeBtn.onclick = () => toggleReelLike(item.id, likeBtn);
-        sideActions.appendChild(likeBtn);
-        wrap.appendChild(sideActions);
+        likeBtn.onclick = (e) => { e.stopPropagation(); toggleReelLike(item.id, likeBtn); };
+        actions.appendChild(likeBtn);
 
+        const soundBtn = document.createElement('button');
+        soundBtn.className = isFull ? 'reel-like-btn reel-sound-btn' : 'reel-like-btn home-reel-like-btn reel-sound-btn';
+        soundBtn.type = 'button';
+        soundBtn.innerHTML = `<i class="fa-solid ${reelSoundEnabled ? 'fa-volume-high' : 'fa-volume-xmark'}"></i>`;
+        soundBtn.onclick = (e) => { e.stopPropagation(); toggleReelSound(); };
+        actions.appendChild(soundBtn);
+
+        if (isCurrentUserAdmin) {
+            const delBtn = document.createElement('button');
+            delBtn.className = isFull ? 'reel-like-btn reel-admin-delete' : 'reel-like-btn home-reel-like-btn reel-admin-delete';
+            delBtn.type = 'button';
+            delBtn.title = "Reels'i sil (admin)";
+            delBtn.innerHTML = `<i class="fa-solid fa-trash"></i>`;
+            delBtn.onclick = (e) => { e.stopPropagation(); deleteReelAsAdmin(item.id); };
+            actions.appendChild(delBtn);
+        }
+
+        wrap.appendChild(actions);
         listenToReelLikes(item.id, likeBtn);
 
         return wrap;
@@ -2477,7 +2753,7 @@
         if (reelLikeListeners[reelId]) {
             reelLikeListeners[reelId].ref.off('value', reelLikeListeners[reelId].handler);
         }
-        const ref = database.ref(`reels/${reelId}/likes`);
+        const ref = database.ref(`reelLikes/${reelId}`);
         const handler = snapshot => {
             likeBtn.querySelector('.reel-like-count').textContent = snapshot.numChildren();
             likeBtn.classList.toggle('liked', currentUid ? snapshot.hasChild(currentUid) : false);
@@ -2488,13 +2764,32 @@
 
     function toggleReelLike(reelId, likeBtn) {
         if (!currentUid) return;
-        const ref = database.ref(`reels/${reelId}/likes/${currentUid}`);
+        const ref = database.ref(`reelLikes/${reelId}/${currentUid}`);
         ref.once('value')
             .then(snapshot => snapshot.exists() ? ref.remove() : ref.set(true))
             .then(() => {
                 likeBtn.classList.add('bump');
                 setTimeout(() => likeBtn.classList.remove('bump'), 200);
             });
+    }
+
+    function toggleReelSound() {
+        reelSoundEnabled = !reelSoundEnabled;
+        localStorage.setItem('lc_sound_on', reelSoundEnabled ? '1' : '0');
+        document.querySelectorAll('.lc-autoplay-video').forEach(v => { v.muted = !reelSoundEnabled; });
+        document.querySelectorAll('.reel-sound-btn i').forEach(icon => {
+            icon.className = reelSoundEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
+        });
+    }
+
+    function deleteReelAsAdmin(reelId) {
+        if (!isCurrentUserAdmin) return;
+        if (!confirm("Bu reels'i kalıcı olarak silmek istediğine emin misin?")) return;
+
+        Promise.all([
+            database.ref(`reels/${reelId}`).remove(),
+            database.ref(`reelLikes/${reelId}`).remove()
+        ]).catch(err => alert("Silinemedi: " + (err && err.message ? err.message : "bilinmeyen hata")));
     }
 
     let reelObserver = null;
@@ -2511,7 +2806,7 @@
             });
         }, { threshold: [0, 0.6, 1] });
 
-        document.querySelectorAll('#reels-feed video').forEach(video => reelObserver.observe(video));
+        document.querySelectorAll('.lc-autoplay-video').forEach(video => reelObserver.observe(video));
     }
 
     function triggerReelUpload() {
@@ -2572,8 +2867,9 @@
                 document.getElementById('reel-preview-video').src = "";
                 hideOverlay('reel-share-overlay');
             })
-            .catch(() => {
-                statusEl.textContent = "Paylaşılamadı. Supabase bucket/policy ayarlarını kontrol et.";
+            .catch(err => {
+                console.error("Reels yükleme hatası:", err);
+                statusEl.textContent = "Paylaşılamadı: " + (err && err.message ? err.message : "bilinmeyen hata");
                 confirmBtn.disabled = false;
             });
     }
