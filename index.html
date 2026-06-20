@@ -9,7 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         * { box-sizing: border-box; }
@@ -1341,7 +1341,13 @@
 
     const auth = firebase.auth();
     const database = firebase.database();
-    const storage = firebase.storage();
+
+    // ===== Supabase (yalnızca dosya barındırma: profil fotoğrafı / story / reels) =====
+    const SUPABASE_URL = "https://fdpbohaumgcbvgjkvdwk.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_KKDnpFo78mlRVGYYgnpZCQ_vzI6as0Y";
+    const SUPABASE_BUCKET = "media";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
     const USERNAME_PATTERN = /^[a-z0-9._]{3,24}$/;
     const STORY_LIFETIME_MS = 24 * 60 * 60 * 1000;
 
@@ -1438,6 +1444,29 @@
         document.getElementById(id).classList.remove('active');
     }
 
+    // ===== Supabase Storage yardımcıları =====
+    function uniqueStorageName(ext) {
+        return Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+    }
+
+    function uploadToSupabase(path, fileOrBlob, contentType, onProgress) {
+        const options = { contentType: contentType, upsert: false };
+        if (onProgress) {
+            options.onUploadProgress = (progress) => {
+                if (progress && progress.total) {
+                    onProgress(Math.round((progress.loaded / progress.total) * 100));
+                }
+            };
+        }
+
+        return supabaseClient.storage.from(SUPABASE_BUCKET).upload(path, fileOrBlob, options)
+            .then(({ data, error }) => {
+                if (error) throw error;
+                const { data: urlData } = supabaseClient.storage.from(SUPABASE_BUCKET).getPublicUrl(path);
+                return urlData.publicUrl;
+            });
+    }
+
     function resizeImageFile(file, maxDim, quality) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -1519,9 +1548,9 @@
     }
 
     function uploadProfilePhoto(blob) {
-        const ref = storage.ref(`profile_photos/${currentUid}/photo.jpg`);
-        return ref.put(blob, { contentType: 'image/jpeg' })
-            .then(snapshot => snapshot.ref.getDownloadURL())
+        const path = `profile_photos/${currentUid}/${uniqueStorageName('jpg')}`;
+
+        return uploadToSupabase(path, blob, 'image/jpeg')
             .then(url => database.ref(`users/${currentUid}`).update({ photoURL: url }).then(() => url))
             .then(url => {
                 currentPhotoURL = url;
@@ -1529,7 +1558,7 @@
                 styleAvatarElement(document.getElementById('own-avatar-inner'), url, currentUser);
             })
             .catch(() => {
-                alert("Fotoğraf yüklenemedi. Firebase Storage'ın etkin olduğundan ve kurallarının doğru olduğundan emin ol.");
+                alert("Fotoğraf yüklenemedi. Supabase bucket adını ve INSERT policy'sini kontrol et.");
             });
     }
 
@@ -2247,16 +2276,15 @@
 
     function uploadStory(blob) {
         const storyId = database.ref(`stories/${currentUid}`).push().key;
-        const ref = storage.ref(`stories/${currentUid}/${storyId}.jpg`);
+        const path = `stories/${currentUid}/${uniqueStorageName('jpg')}`;
 
-        return ref.put(blob, { contentType: 'image/jpeg' })
-            .then(snapshot => snapshot.ref.getDownloadURL())
+        return uploadToSupabase(path, blob, 'image/jpeg')
             .then(url => database.ref(`stories/${currentUid}/${storyId}`).set({
                 imageUrl: url,
                 timestamp: Date.now(),
                 username: currentUser
             }))
-            .catch(() => alert("Hikaye yüklenemedi. Firebase Storage kurallarını kontrol et."));
+            .catch(() => alert("Hikaye yüklenemedi. Supabase bucket adını ve INSERT policy'sini kontrol et."));
     }
 
     function openStoryViewerForUser(uid) {
@@ -2521,37 +2549,33 @@
         const file = pendingReelFile;
         const caption = document.getElementById('reel-caption-input').value.trim();
         const reelId = database.ref('reels').push().key;
-        const ref = storage.ref(`reels/${currentUid}/${reelId}.mp4`);
+        const ext = (file.name && file.name.includes('.')) ? file.name.split('.').pop().toLowerCase() : 'mp4';
+        const path = `reels/${currentUid}/${uniqueStorageName(ext)}`;
         const confirmBtn = document.getElementById('reel-share-confirm-btn');
         const statusEl = document.getElementById('reel-upload-status');
 
         confirmBtn.disabled = true;
         statusEl.textContent = "Yükleniyor... 0%";
 
-        const task = ref.put(file, { contentType: file.type || 'video/mp4' });
-
-        task.on('state_changed', snapshot => {
-            const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+        uploadToSupabase(path, file, file.type || 'video/mp4', pct => {
             statusEl.textContent = `Yükleniyor... ${pct}%`;
-        }, () => {
-            statusEl.textContent = "Yükleme başarısız oldu.";
-            confirmBtn.disabled = false;
-        }, () => {
-            task.snapshot.ref.getDownloadURL().then(url => database.ref(`reels/${reelId}`).set({
+        })
+            .then(url => database.ref(`reels/${reelId}`).set({
                 uid: currentUid,
                 username: currentUser,
                 videoUrl: url,
                 caption: caption,
                 timestamp: Date.now()
-            })).then(() => {
+            }))
+            .then(() => {
                 pendingReelFile = null;
                 document.getElementById('reel-preview-video').src = "";
                 hideOverlay('reel-share-overlay');
-            }).catch(() => {
-                statusEl.textContent = "Paylaşılamadı, tekrar dene.";
+            })
+            .catch(() => {
+                statusEl.textContent = "Paylaşılamadı. Supabase bucket/policy ayarlarını kontrol et.";
                 confirmBtn.disabled = false;
             });
-        });
     }
 
 </script>
