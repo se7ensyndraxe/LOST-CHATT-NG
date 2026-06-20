@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>LOST</title>
+    <title>LOST CHATTİNG</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -3314,7 +3314,6 @@
             });
     }
 
-    // ===== Hesap verisi temizleme (kendi hesabını silme + admin'in başkasını silmesi) =====
     function wipeUserData(uid, username) {
         return Promise.all([
             database.ref(`followers/${uid}`).once('value'),
