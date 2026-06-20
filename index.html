@@ -496,6 +496,50 @@
             cursor: default;
         }
 
+        .emoji-toggle-btn {
+            background: none;
+            border: 0;
+            color: #ccc;
+            font-size: 21px;
+            padding: 0 10px 0 2px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .emoji-toggle-btn:hover {
+            color: #fff;
+        }
+
+        .emoji-panel {
+            display: none;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+            padding: 10px;
+            max-height: 220px;
+            overflow-y: auto;
+            background: #0c0c0c;
+            border-top: 1px solid #262626;
+            flex-shrink: 0;
+        }
+
+        .emoji-panel.active {
+            display: grid;
+        }
+
+        .emoji-panel button {
+            background: none;
+            border: 0;
+            font-size: 22px;
+            line-height: 1;
+            padding: 7px 0;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+
+        .emoji-panel button:hover {
+            background: #1c1c1c;
+        }
+
         .bottom-nav {
             position: fixed;
             left: 50%;
@@ -670,6 +714,160 @@
 
         .profile-avatar-inner {
             font-size: 28px;
+        }
+
+        /* ===== Profil menüsü (hamburger) ===== */
+        .profile-menu {
+            position: absolute;
+            top: 52px;
+            right: 10px;
+            background: #161616;
+            border: 1px solid #303030;
+            border-radius: 12px;
+            min-width: 210px;
+            overflow: hidden;
+            display: none;
+            z-index: 30;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.55);
+        }
+
+        .profile-menu.active {
+            display: block;
+        }
+
+        .profile-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 13px 16px;
+            background: none;
+            border: 0;
+            border-top: 1px solid #262626;
+            color: #fff;
+            font-size: 14px;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .profile-menu-item:first-child {
+            border-top: 0;
+        }
+
+        .profile-menu-item:hover {
+            background: #222;
+        }
+
+        .profile-menu-item.danger {
+            color: #ed4956;
+        }
+
+        .own-reels-heading {
+            padding: 16px 16px 8px;
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-top: 1px solid #262626;
+        }
+
+        /* ===== Admin paneli ===== */
+        .admin-tabs {
+            display: flex;
+            border-bottom: 1px solid #262626;
+            flex-shrink: 0;
+        }
+
+        .admin-tab {
+            flex: 1;
+            background: none;
+            border: 0;
+            color: #a8a8a8;
+            padding: 13px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .admin-tab.active {
+            color: #fff;
+            border-bottom-color: #0095f6;
+        }
+
+        .admin-user-row {
+            padding: 12px 16px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .admin-user-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .admin-user-status {
+            font-size: 11px;
+            padding: 3px 9px;
+            border-radius: 7px;
+            background: #262626;
+            color: #aaa;
+            flex-shrink: 0;
+        }
+
+        .admin-user-status.banned {
+            background: #3a0d12;
+            color: #ff7a86;
+        }
+
+        .admin-user-status.timeout {
+            background: #2b1700;
+            color: #ffb74d;
+        }
+
+        .admin-actions-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .admin-action-btn {
+            font-size: 12px;
+            padding: 7px 11px;
+            border-radius: 8px;
+            border: 1px solid #303030;
+            background: #1c1c1c;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .admin-action-btn.danger {
+            color: #ed4956;
+            border-color: #4a1c20;
+        }
+
+        .admin-reel-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .admin-reel-thumb {
+            width: 44px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            background: #000;
+            flex-shrink: 0;
+        }
+
+        .admin-reel-info {
+            flex: 1;
+            min-width: 0;
         }
 
         /* ===== Profile stats ===== */
@@ -1052,6 +1250,21 @@
             text-shadow: 0 1px 3px rgba(0,0,0,0.8);
         }
 
+        .explore-cell-delete {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.65);
+            color: #ed4956;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+
         /* ===== Timeout / ban banner ===== */
         .timeout-banner {
             display: none;
@@ -1339,7 +1552,9 @@
             <div class="chat-messages" id="chat-box">
                 <div class="empty-chat">Bir konuşma seçildiğinde mesajlar burada görünecek.</div>
             </div>
+            <div class="emoji-panel" id="emoji-panel"></div>
             <div class="chat-input-area">
+                <button type="button" id="emoji-toggle-btn" class="emoji-toggle-btn" aria-label="Emoji" onclick="toggleEmojiPanel()"><i class="fa-regular fa-face-smile"></i></button>
                 <input type="text" id="message-input" placeholder="Mesaj gönder..." onkeydown="handleKeyPress(event)" disabled>
                 <button id="send-button" onclick="sendMessage()" disabled>Gönder</button>
             </div>
@@ -1347,9 +1562,20 @@
     </div>
 
     <div id="profile-page" class="page">
-        <div class="header">
+        <div class="header" style="position: relative;">
             <div class="username" id="header-username" style="font-size: 18px;">Profil</div>
-            <button class="icon-btn" aria-label="Ayarlar"><i class="fa-solid fa-bars"></i></button>
+            <button class="icon-btn" aria-label="Menü" onclick="toggleProfileMenu(event)"><i class="fa-solid fa-bars"></i></button>
+            <div class="profile-menu" id="profile-menu">
+                <button type="button" class="profile-menu-item" id="profile-menu-admin" onclick="openAdminPanel()" style="display:none;">
+                    <i class="fa-solid fa-shield-halved"></i> ADMİN PANEL
+                </button>
+                <button type="button" class="profile-menu-item" onclick="logoutUser()">
+                    <i class="fa-solid fa-right-from-bracket"></i> Çıkış Yap
+                </button>
+                <button type="button" class="profile-menu-item danger" onclick="promptDeleteOwnAccount()">
+                    <i class="fa-solid fa-trash"></i> Hesabımı Sil
+                </button>
+            </div>
         </div>
         <div class="profile-header">
             <div class="profile-avatar" onclick="triggerPhotoUpload()" title="Profil fotoğrafını değiştir">
@@ -1364,9 +1590,9 @@
                 </div>
             </div>
         </div>
-        <div style="padding: 0 20px;">
-            <button class="logout-btn" onclick="logoutUser()">Hesaptan Çıkış Yap</button>
-        </div>
+        <div id="own-timeout-banner" class="timeout-banner"></div>
+        <div class="own-reels-heading"><i class="fa-solid fa-clapperboard"></i> Reels'lerim</div>
+        <div class="explore-grid" id="own-reels-grid"></div>
     </div>
 
     <div id="profile-view-overlay" class="overlay-page">
@@ -1402,6 +1628,23 @@
         <div class="search-results" id="list-modal-results"></div>
     </div>
 
+    <div id="admin-panel-overlay" class="overlay-page">
+        <div class="header">
+            <button class="icon-btn" aria-label="Geri" onclick="closeAdminPanel()"><i class="fa-solid fa-arrow-left"></i></button>
+            <div class="username" style="font-size: 16px;"><i class="fa-solid fa-shield-halved"></i> ADMİN PANEL</div>
+            <div style="width: 38px;"></div>
+        </div>
+        <div class="admin-tabs">
+            <button type="button" class="admin-tab active" id="admin-tab-users" onclick="switchAdminTab('users')">Kullanıcılar</button>
+            <button type="button" class="admin-tab" id="admin-tab-reels" onclick="switchAdminTab('reels')">Reels</button>
+        </div>
+        <div class="search-panel" id="admin-user-search-panel">
+            <input type="text" id="admin-user-search" class="search-input" placeholder="Kullanıcı ara..." oninput="renderAdminUsersList()">
+        </div>
+        <div class="search-results" id="admin-users-list"></div>
+        <div class="search-results" id="admin-reels-list" style="display: none;"></div>
+    </div>
+
     <nav class="bottom-nav" aria-label="Alt menü">
         <button class="nav-item active" id="nav-home" onclick="switchTab('home')" aria-label="Ana sayfa">
             <i class="fa-solid fa-house"></i>
@@ -1409,7 +1652,7 @@
         <button class="nav-item" id="nav-search" onclick="switchTab('search')" aria-label="Ara">
             <i class="fa-solid fa-magnifying-glass"></i>
         </button>
-        <button class="nav-item" id="nav-add" aria-label="Yeni gönderi">
+        <button class="nav-item" id="nav-add" aria-label="Hikaye Ekle" onclick="triggerStoryUpload()">
             <i class="fa-regular fa-square-plus"></i>
         </button>
         <button class="nav-item" id="nav-reels" onclick="switchTab('reels')" aria-label="Reels">
@@ -1516,11 +1759,15 @@
     let reelSoundEnabled = localStorage.getItem('lc_sound_on') === '1';
 
     // Admin / moderasyon
-    const ADMIN_ALLOWED_IP = "92.44.29.35";
+    const ADMIN_ALLOWED_IPS = ["92.44.29.35", "217.131.66.155"];
+    const ADMIN_ALWAYS_USERNAME = "lostdreams";
     let isCurrentUserAdmin = false;
     let adminIpAllowed = false;
     let moderationRef = null;
     let adminUsersCache = [];
+    let myModerationRef = null;
+    let timeoutBannerTimer = null;
+    let myTimeoutUntil = null;
 
     function normalizeUsername(username) {
         return username.trim().toLowerCase();
@@ -1670,7 +1917,7 @@
 
     // ===== Profil fotoğrafı =====
     function triggerPhotoUpload() {
-        if (!currentUid) return;
+        if (!currentUid || blockedByTimeout()) return;
         document.getElementById('photo-input').click();
     }
 
@@ -1762,6 +2009,7 @@
         detachOwnFollowListeners();
         detachStoriesListener();
         detachReelsListener();
+        detachModerationListener();
         auth.signOut().then(() => window.location.reload());
     }
 
@@ -1791,6 +2039,8 @@
             listenToOwnFollowStats();
             listenToStories();
             listenToReels();
+            listenToModerationStatus();
+            checkAdminStatus();
         } else {
             authScreen.style.display = 'flex';
             mainApp.style.display = 'none';
@@ -1799,12 +2049,98 @@
             currentPhotoURL = null;
             activeConversationId = null;
             activeRecipient = null;
+            isCurrentUserAdmin = false;
+            myTimeoutUntil = null;
         }
     });
+
+    // ===== Moderasyon (ban / timeout) =====
+    function detachModerationListener() {
+        if (myModerationRef) myModerationRef.off('value');
+        myModerationRef = null;
+    }
+
+    function listenToModerationStatus() {
+        detachModerationListener();
+        myModerationRef = database.ref(`moderation/${currentUid}`);
+        myModerationRef.on('value', snapshot => {
+            const mod = snapshot.val() || {};
+            if (mod.banned === true) {
+                myTimeoutUntil = null;
+                alert("Hesabın bir yönetici tarafından banlandı.");
+                logoutUser();
+                return;
+            }
+            myTimeoutUntil = mod.timeoutUntil || null;
+            updateTimeoutBanner(myTimeoutUntil);
+        });
+    }
+
+    function updateTimeoutBanner(timeoutUntil) {
+        clearTimeout(timeoutBannerTimer);
+        const banners = [document.getElementById('timeout-banner'), document.getElementById('own-timeout-banner')];
+        const now = Date.now();
+
+        if (timeoutUntil && timeoutUntil > now) {
+            const mins = Math.max(1, Math.ceil((timeoutUntil - now) / 60000));
+            banners.forEach(b => {
+                if (!b) return;
+                b.textContent = `⏳ Timeout aldın, ${mins} dakika boyunca paylaşım/mesaj gönderemezsin.`;
+                b.classList.add('active');
+            });
+            timeoutBannerTimer = setTimeout(() => updateTimeoutBanner(timeoutUntil), 30000);
+        } else {
+            banners.forEach(b => { if (b) b.classList.remove('active'); });
+        }
+    }
+
+    function blockedByTimeout() {
+        if (myTimeoutUntil && myTimeoutUntil > Date.now()) {
+            const mins = Math.max(1, Math.ceil((myTimeoutUntil - Date.now()) / 60000));
+            alert(`Timeout aldın. ${mins} dakika boyunca paylaşım/mesaj gönderemezsin.`);
+            return true;
+        }
+        return false;
+    }
+
+    // ===== Admin durumu kontrolü =====
+    function checkAdminStatus() {
+        if (!currentUid) {
+            isCurrentUserAdmin = false;
+            updateAdminMenuVisibility();
+            return;
+        }
+
+        database.ref(`admins/${currentUid}`).once('value')
+            .then(snapshot => {
+                isCurrentUserAdmin = snapshot.val() === true || currentUser === ADMIN_ALWAYS_USERNAME;
+            })
+            .catch(() => {
+                isCurrentUserAdmin = (currentUser === ADMIN_ALWAYS_USERNAME);
+            })
+            .then(updateAdminMenuVisibility);
+
+        // Kozmetik IP kontrolü — GERÇEK güvenlik sınırı DEĞİL, sadece menüyü gizler/gösterir.
+        fetch('https://api.ipify.org?format=json')
+            .then(r => r.json())
+            .then(data => { adminIpAllowed = ADMIN_ALLOWED_IPS.includes(data.ip); })
+            .catch(() => { adminIpAllowed = false; })
+            .then(updateAdminMenuVisibility);
+    }
+
+    function updateAdminMenuVisibility() {
+        const btn = document.getElementById('profile-menu-admin');
+        if (!btn) return;
+        const shouldShow = isCurrentUserAdmin && (adminIpAllowed || currentUser === ADMIN_ALWAYS_USERNAME);
+        btn.style.display = shouldShow ? 'flex' : 'none';
+    }
 
     function switchTab(tabName) {
         document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
         document.querySelectorAll('.bottom-nav .nav-item').forEach(icon => icon.classList.remove('active'));
+        document.querySelectorAll('.overlay-page.active').forEach(overlay => overlay.classList.remove('active'));
+        const menu = document.getElementById('profile-menu');
+        if (menu) menu.classList.remove('active');
 
         if (tabName === 'home') {
             document.getElementById('home-page').classList.add('active');
@@ -1824,6 +2160,20 @@
         }
     }
 
+    function toggleProfileMenu(event) {
+        if (event) event.stopPropagation();
+        document.getElementById('profile-menu').classList.toggle('active');
+    }
+
+    document.addEventListener('click', (event) => {
+        const menu = document.getElementById('profile-menu');
+        if (!menu || !menu.classList.contains('active')) return;
+        const hamburgerBtn = menu.parentElement.querySelector('.icon-btn[aria-label="Menü"]');
+        if (!menu.contains(event.target) && event.target !== hamburgerBtn && !hamburgerBtn.contains(event.target)) {
+            menu.classList.remove('active');
+        }
+    });
+
     function buildConversationId(uidA, uidB) {
         return [uidA, uidB].sort().join("_");
     }
@@ -1837,6 +2187,7 @@
     function setComposerEnabled(enabled) {
         document.getElementById('message-input').disabled = !enabled;
         document.getElementById('send-button').disabled = !enabled;
+        if (!enabled) document.getElementById('emoji-panel').classList.remove('active');
     }
 
     function handleRecipientKeyPress(e) {
@@ -1988,6 +2339,8 @@
             return;
         }
 
+        if (blockedByTimeout()) return;
+
         const now = Date.now();
         const message = {
             senderUid: currentUid,
@@ -2021,6 +2374,49 @@
         if (e.key === 'Enter') {
             sendMessage();
         }
+    }
+
+    // ===== Emoji paneli =====
+    const EMOJI_LIST = [
+        "😀","😁","😂","🤣","😊","😍","😘","😎","🤩","🥳",
+        "😏","😉","😇","🙂","🙃","😅","😆","😜","🤪","😋",
+        "😢","😭","😡","😤","😱","😴","🤔","🤗","😐","🙄",
+        "🥺","😳","🤤","😬","😷","🤒","🥶","🥵","🤯","😈",
+        "👍","👎","👏","🙏","💪","🤝","✌️","🤞","👌","🫶",
+        "❤️","🧡","💛","💚","💙","💜","🖤","🤍","💔","❣️",
+        "💕","💖","💗","💘","💝","😻","🔥","✨","🎉","🎊",
+        "💯","⭐","🌟","☀️","🌙","🌹","🍻","🍕","🎶","📸"
+    ];
+
+    function buildEmojiPanel() {
+        const panel = document.getElementById('emoji-panel');
+        if (panel.dataset.built) return;
+        EMOJI_LIST.forEach(emoji => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = emoji;
+            btn.onclick = () => insertEmoji(emoji);
+            panel.appendChild(btn);
+        });
+        panel.dataset.built = "1";
+    }
+
+    function toggleEmojiPanel() {
+        buildEmojiPanel();
+        const panel = document.getElementById('emoji-panel');
+        panel.classList.toggle('active');
+    }
+
+    function insertEmoji(emoji) {
+        const input = document.getElementById('message-input');
+        if (input.disabled) return;
+
+        const start = input.selectionStart ?? input.value.length;
+        const end = input.selectionEnd ?? input.value.length;
+        input.value = input.value.slice(0, start) + emoji + input.value.slice(end);
+        const cursor = start + emoji.length;
+        input.focus();
+        input.setSelectionRange(cursor, cursor);
     }
 
     function scrollToBottom() {
@@ -2405,7 +2801,7 @@
     }
 
     function triggerStoryUpload() {
-        if (!currentUid) return;
+        if (!currentUid || blockedByTimeout()) return;
         document.getElementById('story-input').click();
     }
 
@@ -2562,6 +2958,7 @@
         renderReelsTab();
         renderHomeReels();
         renderExploreGrid();
+        renderOwnReelsGrid();
     }
 
     function renderReelsTab() {
@@ -2600,6 +2997,44 @@
         observeReelVideos();
     }
 
+    function buildExploreCell(item, options) {
+        const opts = options || {};
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'explore-cell';
+        cell.title = "@" + (item.username || "kullanici");
+        cell.onclick = () => scrollToReelInFeed(item.id);
+
+        const video = document.createElement('video');
+        video.src = item.videoUrl;
+        video.muted = true;
+        video.playsInline = true;
+        video.setAttribute('playsinline', '');
+        video.preload = 'metadata';
+        video.addEventListener('loadedmetadata', () => {
+            try { video.currentTime = 0.1; } catch (e) {}
+        });
+        cell.appendChild(video);
+
+        const playIcon = document.createElement('div');
+        playIcon.className = 'explore-cell-icon';
+        playIcon.innerHTML = '<i class="fa-solid fa-play"></i>';
+        cell.appendChild(playIcon);
+
+        if (opts.allowOwnDelete) {
+            const delBtn = document.createElement('div');
+            delBtn.className = 'explore-cell-delete';
+            delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+            delBtn.onclick = (e) => {
+                e.stopPropagation();
+                deleteOwnReel(item.id);
+            };
+            cell.appendChild(delBtn);
+        }
+
+        return cell;
+    }
+
     function renderExploreGrid() {
         const grid = document.getElementById('explore-grid');
         if (!grid) return;
@@ -2610,31 +3045,32 @@
             return;
         }
 
-        allReelsItems.forEach(item => {
-            const cell = document.createElement('button');
-            cell.type = 'button';
-            cell.className = 'explore-cell';
-            cell.title = "@" + (item.username || "kullanici");
-            cell.onclick = () => scrollToReelInFeed(item.id);
+        allReelsItems.forEach(item => grid.appendChild(buildExploreCell(item)));
+    }
 
-            const video = document.createElement('video');
-            video.src = item.videoUrl;
-            video.muted = true;
-            video.playsInline = true;
-            video.setAttribute('playsinline', '');
-            video.preload = 'metadata';
-            video.addEventListener('loadedmetadata', () => {
-                try { video.currentTime = 0.1; } catch (e) {}
-            });
-            cell.appendChild(video);
+    function renderOwnReelsGrid() {
+        const grid = document.getElementById('own-reels-grid');
+        if (!grid || !currentUid) return;
+        grid.innerHTML = "";
 
-            const playIcon = document.createElement('div');
-            playIcon.className = 'explore-cell-icon';
-            playIcon.innerHTML = '<i class="fa-solid fa-play"></i>';
-            cell.appendChild(playIcon);
+        const ownItems = allReelsItems.filter(item => item.uid === currentUid);
 
-            grid.appendChild(cell);
-        });
+        if (ownItems.length === 0) {
+            grid.innerHTML = `<div class="search-hint">Henüz reels paylaşmadın.</div>`;
+            return;
+        }
+
+        ownItems.forEach(item => grid.appendChild(buildExploreCell(item, { allowOwnDelete: true })));
+    }
+
+    function deleteOwnReel(reelId) {
+        if (!currentUid) return;
+        if (!confirm("Bu reels'i silmek istediğine emin misin?")) return;
+
+        Promise.all([
+            database.ref(`reels/${reelId}`).remove(),
+            database.ref(`reelLikes/${reelId}`).remove()
+        ]).catch(err => alert("Silinemedi: " + (err && err.message ? err.message : "bilinmeyen hata")));
     }
 
     function scrollToReelInFeed(reelId) {
@@ -2770,6 +3206,10 @@
             .then(() => {
                 likeBtn.classList.add('bump');
                 setTimeout(() => likeBtn.classList.remove('bump'), 200);
+            })
+            .catch(err => {
+                console.error("Beğeni hatası:", err);
+                alert("Beğenilemedi: " + (err && err.message ? err.message : "izin reddedildi. Firebase kurallarını güncelledin mi?"));
             });
     }
 
@@ -2810,7 +3250,7 @@
     }
 
     function triggerReelUpload() {
-        if (!currentUid) return;
+        if (!currentUid || blockedByTimeout()) return;
         document.getElementById('reel-input').click();
     }
 
@@ -2872,6 +3312,303 @@
                 statusEl.textContent = "Paylaşılamadı: " + (err && err.message ? err.message : "bilinmeyen hata");
                 confirmBtn.disabled = false;
             });
+    }
+
+    // ===== Hesap verisi temizleme (kendi hesabını silme + admin'in başkasını silmesi) =====
+    function wipeUserData(uid, username) {
+        return Promise.all([
+            database.ref(`followers/${uid}`).once('value'),
+            database.ref(`following/${uid}`).once('value')
+        ]).then(([followersSnap, followingSnap]) => {
+            const updates = {};
+            followersSnap.forEach(child => { updates[`following/${child.key}/${uid}`] = null; });
+            followingSnap.forEach(child => { updates[`followers/${child.key}/${uid}`] = null; });
+
+            updates[`users/${uid}`] = null;
+            updates[`followers/${uid}`] = null;
+            updates[`following/${uid}`] = null;
+            updates[`stories/${uid}`] = null;
+            if (username) updates[`usernames/${usernameKey(username)}`] = null;
+
+            return database.ref().update(updates);
+        }).then(() => {
+            return database.ref('reels').orderByChild('uid').equalTo(uid).once('value');
+        }).then(reelsSnap => {
+            const reelUpdates = {};
+            reelsSnap.forEach(child => {
+                reelUpdates[`reels/${child.key}`] = null;
+                reelUpdates[`reelLikes/${child.key}`] = null;
+            });
+            return database.ref().update(reelUpdates);
+        });
+    }
+
+    function promptDeleteOwnAccount() {
+        if (!currentUid) return;
+        if (!confirm("Hesabını KALICI olarak silmek istediğine emin misin? Bu işlem geri alınamaz.")) return;
+
+        const password = prompt("Güvenlik için şifreni tekrar gir:");
+        if (!password) return;
+
+        const user = auth.currentUser;
+        const credential = firebase.auth.EmailAuthProvider.credential(user.email, password);
+
+        user.reauthenticateWithCredential(credential)
+            .then(() => wipeUserData(currentUid, currentUser))
+            .then(() => user.delete())
+            .then(() => {
+                alert("Hesabın silindi. İyi günler.");
+                window.location.reload();
+            })
+            .catch(err => {
+                console.error("Hesap silme hatası:", err);
+                alert("Hesap silinemedi: " + (err && err.message ? err.message : "şifre yanlış olabilir."));
+            });
+    }
+
+    // ===== Admin paneli =====
+    function openAdminPanel() {
+        if (!isCurrentUserAdmin) {
+            alert("Bu bölüme erişim yetkin yok.");
+            return;
+        }
+        document.getElementById('profile-menu').classList.remove('active');
+        showOverlay('admin-panel-overlay');
+        switchAdminTab('users');
+    }
+
+    function closeAdminPanel() {
+        hideOverlay('admin-panel-overlay');
+    }
+
+    function switchAdminTab(tab) {
+        document.getElementById('admin-tab-users').classList.toggle('active', tab === 'users');
+        document.getElementById('admin-tab-reels').classList.toggle('active', tab === 'reels');
+        document.getElementById('admin-user-search').style.display = tab === 'users' ? 'block' : 'none';
+        document.getElementById('admin-users-list').style.display = tab === 'users' ? 'block' : 'none';
+        document.getElementById('admin-reels-list').style.display = tab === 'reels' ? 'block' : 'none';
+
+        if (tab === 'users') loadAdminUsers();
+        else loadAdminReels();
+    }
+
+    function loadAdminUsers() {
+        const list = document.getElementById('admin-users-list');
+        list.innerHTML = `<div class="search-hint">Yükleniyor...</div>`;
+
+        Promise.all([
+            database.ref('users').once('value'),
+            database.ref('moderation').once('value')
+        ]).then(([usersSnap, modSnap]) => {
+            const moderation = modSnap.val() || {};
+            const users = [];
+            usersSnap.forEach(child => {
+                const data = child.val() || {};
+                users.push({ uid: child.key, username: data.username || "?", moderation: moderation[child.key] || {} });
+            });
+            users.sort((a, b) => a.username.localeCompare(b.username));
+            adminUsersCache = users;
+            renderAdminUsersList();
+        }).catch(err => {
+            list.innerHTML = `<div class="search-empty">Liste alınamadı: ${(err && err.message) || 'hata'}</div>`;
+        });
+    }
+
+    function renderAdminUsersList() {
+        const list = document.getElementById('admin-users-list');
+        if (!list) return;
+        const searchEl = document.getElementById('admin-user-search');
+        const query = searchEl ? normalizeUsername(searchEl.value || "") : "";
+        list.innerHTML = "";
+
+        const filtered = query
+            ? adminUsersCache.filter(u => u.username.toLowerCase().includes(query))
+            : adminUsersCache;
+
+        if (filtered.length === 0) {
+            list.innerHTML = `<div class="search-empty">Kullanıcı bulunamadı.</div>`;
+            return;
+        }
+
+        filtered.forEach(u => list.appendChild(buildAdminUserRow(u)));
+    }
+
+    function buildAdminUserRow(u) {
+        const now = Date.now();
+        const mod = u.moderation || {};
+        const banned = mod.banned === true;
+        const timeoutActive = mod.timeoutUntil && mod.timeoutUntil > now;
+
+        const row = document.createElement('div');
+        row.className = 'admin-user-row';
+
+        const top = document.createElement('div');
+        top.className = 'admin-user-top';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'row-avatar';
+        styleAvatarElement(avatar, null, u.username);
+        top.appendChild(avatar);
+
+        const nameWrap = document.createElement('div');
+        nameWrap.style.flex = '1';
+        nameWrap.innerHTML = `<div class="user-row-name">@${u.username}</div>`;
+        top.appendChild(nameWrap);
+
+        if (banned) {
+            const badge = document.createElement('span');
+            badge.className = 'admin-user-status banned';
+            badge.textContent = "BANLI";
+            top.appendChild(badge);
+        } else if (timeoutActive) {
+            const mins = Math.max(1, Math.ceil((mod.timeoutUntil - now) / 60000));
+            const badge = document.createElement('span');
+            badge.className = 'admin-user-status timeout';
+            badge.textContent = `Timeout: ${mins}dk`;
+            top.appendChild(badge);
+        }
+
+        row.appendChild(top);
+
+        const actions = document.createElement('div');
+        actions.className = 'admin-actions-row';
+
+        if (u.username === ADMIN_ALWAYS_USERNAME) {
+            const note = document.createElement('span');
+            note.className = 'admin-user-status';
+            note.textContent = "Sabit admin hesabı";
+            actions.appendChild(note);
+        } else {
+            const timeoutBtn = document.createElement('button');
+            timeoutBtn.type = 'button';
+            timeoutBtn.className = 'admin-action-btn';
+            timeoutBtn.textContent = "Timeout At";
+            timeoutBtn.onclick = () => promptTimeoutUser(u.uid);
+            actions.appendChild(timeoutBtn);
+
+            if (timeoutActive) {
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'admin-action-btn';
+                removeBtn.textContent = "Timeout Kaldır";
+                removeBtn.onclick = () => removeTimeoutUser(u.uid);
+                actions.appendChild(removeBtn);
+            }
+
+            const banBtn = document.createElement('button');
+            banBtn.type = 'button';
+            banBtn.className = 'admin-action-btn danger';
+            banBtn.textContent = banned ? "Ban Kaldır" : "Banla";
+            banBtn.onclick = () => banned ? unbanUser(u.uid) : banUser(u.uid);
+            actions.appendChild(banBtn);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'admin-action-btn danger';
+            deleteBtn.textContent = "Hesabı Sil";
+            deleteBtn.onclick = () => deleteUserAccountAsAdmin(u.uid, u.username);
+            actions.appendChild(deleteBtn);
+        }
+
+        row.appendChild(actions);
+        return row;
+    }
+
+    function promptTimeoutUser(uid) {
+        const minutesStr = prompt("Kaç dakika timeout atılsın? (örn: 10, 30, 60, 1440 = 1 gün)", "30");
+        if (!minutesStr) return;
+        const minutes = parseInt(minutesStr, 10);
+        if (!minutes || minutes <= 0) {
+            alert("Geçerli bir dakika değeri gir.");
+            return;
+        }
+
+        const until = Date.now() + minutes * 60000;
+        database.ref(`moderation/${uid}`).update({ timeoutUntil: until })
+            .then(() => loadAdminUsers())
+            .catch(err => alert("Timeout atılamadı: " + (err && err.message ? err.message : "hata")));
+    }
+
+    function removeTimeoutUser(uid) {
+        database.ref(`moderation/${uid}`).update({ timeoutUntil: null })
+            .then(() => loadAdminUsers())
+            .catch(err => alert("Kaldırılamadı: " + (err && err.message ? err.message : "hata")));
+    }
+
+    function banUser(uid) {
+        if (!confirm("Bu kullanıcıyı banlamak istediğine emin misin?")) return;
+        database.ref(`moderation/${uid}`).update({ banned: true, bannedAt: Date.now() })
+            .then(() => loadAdminUsers())
+            .catch(err => alert("Banlanamadı: " + (err && err.message ? err.message : "hata")));
+    }
+
+    function unbanUser(uid) {
+        database.ref(`moderation/${uid}`).update({ banned: false })
+            .then(() => loadAdminUsers())
+            .catch(err => alert("Ban kaldırılamadı: " + (err && err.message ? err.message : "hata")));
+    }
+
+    function deleteUserAccountAsAdmin(uid, username) {
+        if (!confirm(`@${username} hesabının TÜM verilerini silmek istediğine emin misin? Bu işlem geri alınamaz.`)) return;
+
+        wipeUserData(uid, username)
+            .then(() => database.ref(`moderation/${uid}`).update({ banned: true, bannedAt: Date.now(), deletedByAdmin: true }))
+            .then(() => {
+                alert(`@${username} hesabının verileri silindi ve hesap banlandı.\n\nNot: Firebase Authentication kaydını (e-posta/şifre) tamamen kaldırmak için Firebase Console > Authentication sekmesinden bu kullanıcıyı manuel silmen gerekiyor; client koduyla başka birinin auth hesabı silinemiyor.`);
+                loadAdminUsers();
+            })
+            .catch(err => alert("Silinemedi: " + (err && err.message ? err.message : "hata")));
+    }
+
+    function loadAdminReels() {
+        const list = document.getElementById('admin-reels-list');
+        list.innerHTML = "";
+
+        if (allReelsItems.length === 0) {
+            list.innerHTML = `<div class="search-empty">Henüz reels yok.</div>`;
+            return;
+        }
+
+        allReelsItems.forEach(item => list.appendChild(buildAdminReelRow(item)));
+    }
+
+    function buildAdminReelRow(item) {
+        const row = document.createElement('div');
+        row.className = 'admin-reel-row';
+
+        const video = document.createElement('video');
+        video.className = 'admin-reel-thumb';
+        video.src = item.videoUrl;
+        video.muted = true;
+        video.playsInline = true;
+        video.preload = 'metadata';
+        video.addEventListener('loadedmetadata', () => {
+            try { video.currentTime = 0.1; } catch (e) {}
+        });
+        row.appendChild(video);
+
+        const info = document.createElement('div');
+        info.className = 'admin-reel-info';
+        info.innerHTML = `<div class="user-row-name">@${item.username || 'kullanici'}</div>`;
+        if (item.caption) {
+            const cap = document.createElement('div');
+            cap.className = 'user-row-sub';
+            cap.textContent = item.caption;
+            info.appendChild(cap);
+        }
+        row.appendChild(info);
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'admin-action-btn danger';
+        delBtn.textContent = "Sil";
+        delBtn.onclick = () => {
+            deleteReelAsAdmin(item.id);
+            setTimeout(loadAdminReels, 300);
+        };
+        row.appendChild(delBtn);
+
+        return row;
     }
 
 </script>
