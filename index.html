@@ -1719,7 +1719,7 @@
     // Kimlik doğrulama hâlâ Firebase Auth üzerinden; PocketBase'e ayrıca login OLUNMUYOR.
     // Bu yüzden "users" koleksiyonundaki Update kuralı (id = @request.auth.id) bu istemciden
     // tetiklenemez — sadece halka açık olan create() çağrılarını kullanıyoruz (bkz. açıklama).
-    const POCKETBASE_URL = "http://SUNUCU_IP_ADRESIN:8090"; // <-- BURAYI kendi PocketBase sunucu adresinle değiştir
+    const POCKETBASE_URL = "https://comfy-sherry-roaming.ngrok-free.dev"; // <-- BURAYI kendi PocketBase sunucu adresinle değiştir
     const pb = new PocketBase(POCKETBASE_URL);
 
     function buildPocketBaseFileUrl(record, filename) {
