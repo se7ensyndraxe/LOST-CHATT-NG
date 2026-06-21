@@ -1719,7 +1719,7 @@
     // Kimlik doğrulama hâlâ Firebase Auth üzerinden; PocketBase'e ayrıca login OLUNMUYOR.
     // Bu yüzden "users" koleksiyonundaki Update kuralı (id = @request.auth.id) bu istemciden
     // tetiklenemez — sadece halka açık olan create() çağrılarını kullanıyoruz (bkz. açıklama).
-    const POCKETBASE_URL = "https://comfy-sherry-roaming.ngrok-free.dev"; // <-- BURAYI kendi PocketBase sunucu adresinle değiştir
+    const POCKETBASE_URL = "https://comfy-sherry-roaming.ngrok-free.dev";
     const pb = new PocketBase(POCKETBASE_URL);
 
     function buildPocketBaseFileUrl(record, filename) {
@@ -1773,6 +1773,7 @@
     let moderationRef = null;
     let adminUsersCache = [];
     let pbUserRecordCache = null;
+    let pbUserRecordPromise = null;
     let myModerationRef = null;
     let timeoutBannerTimer = null;
     let myTimeoutUntil = null;
@@ -1845,33 +1846,65 @@
     // Bu yüzden profil fotoğrafı değiştirmek de "üzerine yazma" değil, her seferinde YENİ bir
     // PocketBase kaydı oluşturmak şeklinde çalışır (Supabase'deki mantıkla aynı).
 
-    // reels/stories'deki "user_id" alanı bir RELATION olduğu için (Firebase UID'sini doğrudan
-    // kabul etmez), her Firebase kullanıcısı için PocketBase "users" koleksiyonunda SABİT/tek
-    // bir kayıt lazım. Bu eşlemeyi Firebase Realtime Database'de "pbUserMap/{uid}" altında
-    // tutuyoruz ki ileride farklı bir cihazdan da aynı eşleme kullanılabilsin.
+    // ÖNEMLİ DÜZELTME: "users" PocketBase'de bir AUTH koleksiyonu — create() çağrısı
+    // password/passwordConfirm istiyor (sıradan bir "base" koleksiyon gibi davranmıyor).
+    // Ayrıca reels/stories'in Create kuralı "giriş yapan kullanıcılar" dediği için, sadece
+    // kaydı oluşturmak yetmiyor; PocketBase'e bu kayıtla GERÇEKTEN login de olmamız gerekiyor
+    // (authWithPassword), yoksa hem avatar update'i hem reels/stories create'i
+    // "id = @request.auth.id" / "@request.auth != null" kurallarına çarpıp 403 döner.
+    // Şifreyi rastgele üretip Firebase'e (sadece o kullanıcının okuyabileceği pbUserMap
+    // altına) kaydediyoruz ki farklı cihaz/oturumda da aynı hesaba tekrar login olabilelim.
+    function generatePocketBasePassword() {
+        return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2) + "Aa1!";
+    }
+
     function ensurePocketBaseUserRecord() {
         if (pbUserRecordCache) return Promise.resolve(pbUserRecordCache);
         if (!currentUid) return Promise.reject(new Error("Oturum açık değil"));
+        if (pbUserRecordPromise) return pbUserRecordPromise; // eşzamanlı çağrılar aynı isteği paylaşsın
 
-        return database.ref(`pbUserMap/${currentUid}`).once('value').then(snapshot => {
+        pbUserRecordPromise = database.ref(`pbUserMap/${currentUid}`).once('value').then(snapshot => {
             if (snapshot.exists()) {
-                pbUserRecordCache = snapshot.val();
-                return pbUserRecordCache;
+                const mapped = snapshot.val(); // { id, username, password }
+                return pb.collection('users').authWithPassword(mapped.username, mapped.password)
+                    .then(() => {
+                        pbUserRecordCache = mapped.id;
+                        return pbUserRecordCache;
+                    });
             }
-            return pb.collection('users').create({}).then(record => {
-                pbUserRecordCache = record.id;
-                return database.ref(`pbUserMap/${currentUid}`).set(record.id).then(() => record.id);
+
+            const username = "fb_" + currentUid.slice(0, 24);
+            const password = generatePocketBasePassword();
+
+            return pb.collection('users').create({
+                username: username,
+                password: password,
+                passwordConfirm: password
+            }).then(record => {
+                return pb.collection('users').authWithPassword(username, password).then(() => {
+                    pbUserRecordCache = record.id;
+                    return database.ref(`pbUserMap/${currentUid}`).set({
+                        id: record.id,
+                        username: username,
+                        password: password
+                    }).then(() => record.id);
+                });
             });
+        }).finally(() => {
+            pbUserRecordPromise = null;
         });
+
+        return pbUserRecordPromise;
     }
 
     function uploadProfilePhotoToPocketBase(blob) {
-        const formData = new FormData();
-        formData.append('avatar', blob, 'avatar.jpg');
+        return ensurePocketBaseUserRecord().then(pbUserId => {
+            const formData = new FormData();
+            formData.append('avatar', blob, 'avatar.jpg');
 
-        return pb.collection('users').create(formData).then(record => {
-            const filename = record.avatar;
-            return buildPocketBaseFileUrl(record, filename);
+            return pb.collection('users').update(pbUserId, formData).then(record => {
+                return buildPocketBaseFileUrl(record, record.avatar);
+            });
         });
     }
 
@@ -2057,6 +2090,8 @@
         detachReelsListener();
         detachModerationListener();
         pbUserRecordCache = null;
+        pbUserRecordPromise = null;
+        try { pb.authStore.clear(); } catch (e) {}
         auth.signOut().then(() => window.location.reload());
     }
 
