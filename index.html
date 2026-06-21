@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>LOST CHATTİNG</title>
+    <title>LOST CHATTING</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pocketbase@latest/dist/pocketbase.umd.js"></script>
 
     <style>
         * { box-sizing: border-box; }
@@ -1715,11 +1715,18 @@
     const auth = firebase.auth();
     const database = firebase.database();
 
-    // ===== Supabase (yalnızca dosya barındırma: profil fotoğrafı / story / reels) =====
-    const SUPABASE_URL = "https://fdpbohaumgcbvgjkvdwk.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_KKDnpFo78mlRVGYYgnpZCQ_vzI6as0Y";
-    const SUPABASE_BUCKET = "media";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // ===== PocketBase (yalnızca dosya barındırma: profil fotoğrafı / story / reels) =====
+    // Kimlik doğrulama hâlâ Firebase Auth üzerinden; PocketBase'e ayrıca login OLUNMUYOR.
+    // Bu yüzden "users" koleksiyonundaki Update kuralı (id = @request.auth.id) bu istemciden
+    // tetiklenemez — sadece halka açık olan create() çağrılarını kullanıyoruz (bkz. açıklama).
+    const POCKETBASE_URL = "http://SUNUCU_IP_ADRESIN:8090"; // <-- BURAYI kendi PocketBase sunucu adresinle değiştir
+    const pb = new PocketBase(POCKETBASE_URL);
+
+    function buildPocketBaseFileUrl(record, filename) {
+        if (!record || !filename) return null;
+        const collection = record.collectionId || record.collectionName;
+        return `${POCKETBASE_URL}/api/files/${collection}/${record.id}/${filename}`;
+    }
 
     const USERNAME_PATTERN = /^[a-z0-9._]{3,24}$/;
     const STORY_LIFETIME_MS = 24 * 60 * 60 * 1000;
@@ -1765,6 +1772,7 @@
     let adminIpAllowed = false;
     let moderationRef = null;
     let adminUsersCache = [];
+    let pbUserRecordCache = null;
     let myModerationRef = null;
     let timeoutBannerTimer = null;
     let myTimeoutUntil = null;
@@ -1830,27 +1838,67 @@
         document.getElementById(id).classList.remove('active');
     }
 
-    // ===== Supabase Storage yardımcıları =====
-    function uniqueStorageName(ext) {
-        return Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+    // ===== PocketBase dosya yükleme yardımcıları =====
+    // PocketBase'e GİRİŞ YAPMIYORUZ (kimlik hâlâ Firebase Auth'ta). "users" koleksiyonunun
+    // Update kuralı (id = @request.auth.id) bu yüzden bizim için hiç tetiklenmeyecek/işe
+    // yaramayacak — sadece herkese açık olan create() kullanıyoruz, asla update() kullanmıyoruz.
+    // Bu yüzden profil fotoğrafı değiştirmek de "üzerine yazma" değil, her seferinde YENİ bir
+    // PocketBase kaydı oluşturmak şeklinde çalışır (Supabase'deki mantıkla aynı).
+
+    // reels/stories'deki "user_id" alanı bir RELATION olduğu için (Firebase UID'sini doğrudan
+    // kabul etmez), her Firebase kullanıcısı için PocketBase "users" koleksiyonunda SABİT/tek
+    // bir kayıt lazım. Bu eşlemeyi Firebase Realtime Database'de "pbUserMap/{uid}" altında
+    // tutuyoruz ki ileride farklı bir cihazdan da aynı eşleme kullanılabilsin.
+    function ensurePocketBaseUserRecord() {
+        if (pbUserRecordCache) return Promise.resolve(pbUserRecordCache);
+        if (!currentUid) return Promise.reject(new Error("Oturum açık değil"));
+
+        return database.ref(`pbUserMap/${currentUid}`).once('value').then(snapshot => {
+            if (snapshot.exists()) {
+                pbUserRecordCache = snapshot.val();
+                return pbUserRecordCache;
+            }
+            return pb.collection('users').create({}).then(record => {
+                pbUserRecordCache = record.id;
+                return database.ref(`pbUserMap/${currentUid}`).set(record.id).then(() => record.id);
+            });
+        });
     }
 
-    function uploadToSupabase(path, fileOrBlob, contentType, onProgress) {
-        const options = { contentType: contentType, upsert: false };
-        if (onProgress) {
-            options.onUploadProgress = (progress) => {
-                if (progress && progress.total) {
-                    onProgress(Math.round((progress.loaded / progress.total) * 100));
-                }
-            };
-        }
+    function uploadProfilePhotoToPocketBase(blob) {
+        const formData = new FormData();
+        formData.append('avatar', blob, 'avatar.jpg');
 
-        return supabaseClient.storage.from(SUPABASE_BUCKET).upload(path, fileOrBlob, options)
-            .then(({ data, error }) => {
-                if (error) throw error;
-                const { data: urlData } = supabaseClient.storage.from(SUPABASE_BUCKET).getPublicUrl(path);
-                return urlData.publicUrl;
+        return pb.collection('users').create(formData).then(record => {
+            const filename = record.avatar;
+            return buildPocketBaseFileUrl(record, filename);
+        });
+    }
+
+    function uploadStoryToPocketBase(blob, expiresAtISO) {
+        return ensurePocketBaseUserRecord().then(pbUserId => {
+            const formData = new FormData();
+            formData.append('user_id', pbUserId);
+            formData.append('media', blob, 'story.jpg');
+            formData.append('expires_at', expiresAtISO);
+
+            return pb.collection('stories').create(formData).then(record => {
+                return buildPocketBaseFileUrl(record, record.media);
             });
+        });
+    }
+
+    function uploadReelToPocketBase(file, description) {
+        return ensurePocketBaseUserRecord().then(pbUserId => {
+            const formData = new FormData();
+            formData.append('user_id', pbUserId);
+            formData.append('video', file, file.name || 'reel.mp4');
+            formData.append('description', description || '');
+
+            return pb.collection('reels').create(formData).then(record => {
+                return buildPocketBaseFileUrl(record, record.video);
+            });
+        });
     }
 
     function resizeImageFile(file, maxDim, quality) {
@@ -1934,9 +1982,7 @@
     }
 
     function uploadProfilePhoto(blob) {
-        const path = `profile_photos/${currentUid}/${uniqueStorageName('jpg')}`;
-
-        return uploadToSupabase(path, blob, 'image/jpeg')
+        return uploadProfilePhotoToPocketBase(blob)
             .then(url => database.ref(`users/${currentUid}`).update({ photoURL: url }).then(() => url))
             .then(url => {
                 currentPhotoURL = url;
@@ -1945,7 +1991,7 @@
             })
             .catch(err => {
                 console.error("Profil fotoğrafı yükleme hatası:", err);
-                alert("Fotoğraf yüklenemedi: " + (err && err.message ? err.message : "bilinmeyen hata") + "\n\n(Detay için F12 > Console'a bak)");
+                alert("Fotoğraf yüklenemedi: " + (err && err.message ? err.message : "bilinmeyen hata") + "\n\n(Detay için F12 > Console'a bak; PocketBase sunucunun çalıştığından ve CORS/mixed-content engeli olmadığından emin ol)");
             });
     }
 
@@ -2010,6 +2056,7 @@
         detachStoriesListener();
         detachReelsListener();
         detachModerationListener();
+        pbUserRecordCache = null;
         auth.signOut().then(() => window.location.reload());
     }
 
@@ -2817,9 +2864,9 @@
 
     function uploadStory(blob) {
         const storyId = database.ref(`stories/${currentUid}`).push().key;
-        const path = `stories/${currentUid}/${uniqueStorageName('jpg')}`;
+        const expiresAtISO = new Date(Date.now() + STORY_LIFETIME_MS).toISOString();
 
-        return uploadToSupabase(path, blob, 'image/jpeg')
+        return uploadStoryToPocketBase(blob, expiresAtISO)
             .then(url => database.ref(`stories/${currentUid}/${storyId}`).set({
                 imageUrl: url,
                 timestamp: Date.now(),
@@ -2827,7 +2874,7 @@
             }))
             .catch(err => {
                 console.error("Hikaye yükleme hatası:", err);
-                alert("Hikaye yüklenemedi: " + (err && err.message ? err.message : "bilinmeyen hata") + "\n\n(Detay için F12 > Console'a bak)");
+                alert("Hikaye yüklenemedi: " + (err && err.message ? err.message : "bilinmeyen hata") + "\n\n(Detay için F12 > Console'a bak; PocketBase sunucunun çalıştığından ve CORS/mixed-content engeli olmadığından emin ol)");
             });
     }
 
@@ -3284,17 +3331,15 @@
         const file = pendingReelFile;
         const caption = document.getElementById('reel-caption-input').value.trim();
         const reelId = database.ref('reels').push().key;
-        const ext = (file.name && file.name.includes('.')) ? file.name.split('.').pop().toLowerCase() : 'mp4';
-        const path = `reels/${currentUid}/${uniqueStorageName(ext)}`;
         const confirmBtn = document.getElementById('reel-share-confirm-btn');
         const statusEl = document.getElementById('reel-upload-status');
 
         confirmBtn.disabled = true;
-        statusEl.textContent = "Yükleniyor... 0%";
+        // Not: PocketBase JS SDK'sı şu an upload-progress yüzdesi vermiyor (Supabase'in
+        // onUploadProgress'inin karşılığı yok), o yüzden belirsiz bir "yükleniyor" durumu gösteriyoruz.
+        statusEl.textContent = "Yükleniyor, video boyutuna göre biraz sürebilir...";
 
-        uploadToSupabase(path, file, file.type || 'video/mp4', pct => {
-            statusEl.textContent = `Yükleniyor... ${pct}%`;
-        })
+        uploadReelToPocketBase(file, caption)
             .then(url => database.ref(`reels/${reelId}`).set({
                 uid: currentUid,
                 username: currentUser,
@@ -3309,11 +3354,12 @@
             })
             .catch(err => {
                 console.error("Reels yükleme hatası:", err);
-                statusEl.textContent = "Paylaşılamadı: " + (err && err.message ? err.message : "bilinmeyen hata");
+                statusEl.textContent = "Paylaşılamadı: " + (err && err.message ? err.message : "bilinmeyen hata") + " (PocketBase sunucu/CORS/mixed-content kontrol et)";
                 confirmBtn.disabled = false;
             });
     }
 
+    // ===== Hesap verisi temizleme (kendi hesabını silme + admin'in başkasını silmesi) =====
     function wipeUserData(uid, username) {
         return Promise.all([
             database.ref(`followers/${uid}`).once('value'),
