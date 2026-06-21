@@ -145,6 +145,22 @@
 
         .logo {
             font-size: clamp(18px, 5vw, 24px);
+            background: linear-gradient(90deg, #ffffff, #00d4ff, #ffffff, #00d4ff);
+            background-size: 300% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: logo-gradient-move 6s ease-in-out infinite, logo-glow 2.5s ease-in-out infinite;
+        }
+
+        @keyframes logo-gradient-move {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        @keyframes logo-glow {
+            0%, 100% { filter: drop-shadow(0 0 2px rgba(0, 212, 255, 0.35)); }
+            50% { filter: drop-shadow(0 0 7px rgba(0, 212, 255, 0.8)); }
         }
 
         .header-icons {
@@ -443,6 +459,15 @@
             border: 1px solid #333;
         }
 
+        .theme-love .message.sent {
+            background: linear-gradient(135deg, #ff6fa5, #ff9bc2);
+        }
+
+        .theme-love .message.received {
+            background-color: #3a1f2c;
+            border-color: #54283b;
+        }
+
         .message-sender {
             font-size: 11px;
             color: #a8a8a8;
@@ -657,6 +682,10 @@
             background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
         }
 
+        .story-ring.seen {
+            background: #3a3a3a;
+        }
+
         .story-avatar-inner {
             width: 100%;
             height: 100%;
@@ -770,6 +799,88 @@
             align-items: center;
             gap: 8px;
             border-top: 1px solid #262626;
+        }
+
+        /* ===== Sohbet tema paneli ===== */
+        .theme-option-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 13px 14px;
+            background: #181818;
+            border: 1px solid #2e2e2e;
+            border-radius: 11px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .theme-option-btn.active {
+            border-color: #0095f6;
+        }
+
+        .theme-swatch {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .theme-swatch-default {
+            background: #0d0d0d;
+            border: 1px solid #333;
+        }
+
+        .theme-swatch-love {
+            background: linear-gradient(135deg, #ffd9e8, #ff6fa5);
+        }
+
+        /* ===== Love teması: toz pembe zemin + hafif parlayan kalpler ===== */
+        .theme-love .chat-messages {
+            background: linear-gradient(180deg, #2b1620 0%, #1c1018 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theme-love .chat-input-area {
+            background: #1c1018;
+            border-top: 1px solid #3a2030;
+        }
+
+        .theme-love .emoji-panel {
+            background: #1c1018;
+            border-top: 1px solid #3a2030;
+        }
+
+        .theme-love .chat-input-area input {
+            background: #2a1620;
+        }
+
+        .love-hearts-layer {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .love-heart {
+            position: absolute;
+            bottom: -20px;
+            color: #ff8fc4;
+            opacity: 0;
+            text-shadow: 0 0 6px rgba(255, 110, 165, 0.6);
+            animation: love-float 9s ease-in infinite;
+        }
+
+        @keyframes love-float {
+            0% { transform: translateY(0) scale(0.8); opacity: 0; }
+            12% { opacity: 0.32; }
+            75% { opacity: 0.18; }
+            100% { transform: translateY(-260px) scale(1.05); opacity: 0; }
         }
 
         /* ===== Admin paneli ===== */
@@ -1069,6 +1180,12 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
+        }
+
+        .reel-video-wrap {
+            position: relative;
+            width: 100%;
+            height: 100%;
         }
 
         .reel-item video {
@@ -1491,13 +1608,6 @@
         </div>
         <div class="stories-bar" id="stories-bar"></div>
         <div id="timeout-banner" class="timeout-banner"></div>
-        <div class="post">
-            <div class="post-header">
-                <div class="avatar"></div>
-                <div class="username">lost.chatting</div>
-            </div>
-            <div class="post-image">Ana Akış Yükleniyor...</div>
-        </div>
         <div class="home-reels-list" id="home-reels-list"></div>
     </div>
 
@@ -1529,13 +1639,21 @@
     </div>
 
     <div id="chat-page" class="page">
-        <div class="header chat-header">
+        <div class="header chat-header" style="position: relative;">
             <button class="icon-btn" aria-label="Geri" onclick="switchTab('home')">
                 <i class="fa-solid fa-arrow-left"></i>
             </button>
             <div class="chat-title-wrap">
                 <div class="username" id="chat-title" style="font-size: 16px;">Mesajlar</div>
                 <div class="chat-recipient" id="chat-recipient"></div>
+            </div>
+            <button class="icon-btn" aria-label="Sohbet menüsü" onclick="toggleChatMenu(event)">
+                <i class="fa-solid fa-ellipsis-vertical"></i>
+            </button>
+            <div class="profile-menu" id="chat-menu">
+                <button type="button" class="profile-menu-item" onclick="openThemePanel()">
+                    <i class="fa-solid fa-palette"></i> Tema
+                </button>
             </div>
         </div>
 
@@ -1550,6 +1668,7 @@
 
         <div class="chat-container">
             <div class="chat-messages" id="chat-box">
+                <div class="love-hearts-layer" id="love-hearts-layer"></div>
                 <div class="empty-chat">Bir konuşma seçildiğinde mesajlar burada görünecek.</div>
             </div>
             <div class="emoji-panel" id="emoji-panel"></div>
@@ -1669,10 +1788,12 @@
     <div class="story-viewer-header">
         <div class="story-viewer-avatar" id="story-viewer-avatar"></div>
         <div class="story-viewer-username" id="story-viewer-username"></div>
+        <button class="icon-btn" id="story-admin-delete-btn" aria-label="Hikayeyi sil (admin)" onclick="deleteCurrentStoryAsAdmin()" style="display:none;"><i class="fa-solid fa-trash" style="color:#ed4956;"></i></button>
         <button class="icon-btn" aria-label="Kapat" onclick="closeStoryViewer()"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="story-viewer-body">
         <img id="story-viewer-image" class="story-viewer-image" alt="">
+        <video id="story-viewer-video" class="story-viewer-image" playsinline style="display:none;"></video>
         <div class="story-viewer-nav">
             <div class="story-nav-zone" onclick="storyPrev()"></div>
             <div class="story-nav-zone" onclick="storyNext()"></div>
@@ -1693,7 +1814,7 @@
 </div>
 
 <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoSelected(event)">
-<input type="file" id="story-input" accept="image/*" style="display:none" onchange="handleStorySelected(event)">
+<input type="file" id="story-input" accept="image/*,video/*" style="display:none" onchange="handleStorySelected(event)">
 <input type="file" id="reel-input" accept="video/*" style="display:none" onchange="handleReelSelected(event)">
 
 <script>
@@ -1757,6 +1878,8 @@
     let activeStoryIndex = 0;
     let storyTimer = null;
     const STORY_DURATION_MS = 5000;
+    let storySeenRef = null;
+    let storySeenMap = {};
 
     // Reels
     let reelsRootRef = null;
@@ -1908,11 +2031,14 @@
         });
     }
 
-    function uploadStoryToPocketBase(blob, expiresAtISO) {
+    function uploadStoryToPocketBase(fileOrBlob, expiresAtISO) {
         return ensurePocketBaseUserRecord().then(pbUserId => {
+            const isVideo = fileOrBlob.type && fileOrBlob.type.startsWith('video/');
+            const filename = fileOrBlob.name || (isVideo ? 'story.mp4' : 'story.jpg');
+
             const formData = new FormData();
             formData.append('user_id', pbUserId);
-            formData.append('media', blob, 'story.jpg');
+            formData.append('media', fileOrBlob, filename);
             formData.append('expires_at', expiresAtISO);
 
             return pb.collection('stories').create(formData).then(record => {
@@ -2087,6 +2213,7 @@
         detachConversationList();
         detachOwnFollowListeners();
         detachStoriesListener();
+        detachStorySeenListener();
         detachReelsListener();
         detachModerationListener();
         pbUserRecordCache = null;
@@ -2120,6 +2247,7 @@
             listenToConversationList();
             listenToOwnFollowStats();
             listenToStories();
+            listenToStorySeen();
             listenToReels();
             listenToModerationStatus();
             checkAdminStatus();
@@ -2369,6 +2497,11 @@
 
         const chatBox = document.getElementById('chat-box');
         chatBox.innerHTML = "";
+        const heartsLayer = document.createElement('div');
+        heartsLayer.className = 'love-hearts-layer';
+        heartsLayer.id = 'love-hearts-layer';
+        chatBox.appendChild(heartsLayer);
+        spawnLoveHearts();
 
         activeMessagesRef = database.ref(`conversations/${conversationId}/messages`).limitToLast(200);
         activeMessageHandler = snapshot => {
@@ -2817,7 +2950,13 @@
             userSnap.forEach(storySnap => {
                 const data = storySnap.val();
                 if (data && data.timestamp && (now - data.timestamp) < STORY_LIFETIME_MS) {
-                    items.push({ id: storySnap.key, imageUrl: data.imageUrl, timestamp: data.timestamp, username: data.username });
+                    items.push({
+                        id: storySnap.key,
+                        mediaUrl: data.mediaUrl || data.imageUrl,
+                        mediaType: data.mediaType || 'image',
+                        timestamp: data.timestamp,
+                        username: data.username
+                    });
                 }
             });
             if (items.length > 0) {
@@ -2832,10 +2971,15 @@
             .filter(uid => uid !== currentUid)
             .sort((a, b) => byUid[b][byUid[b].length - 1].timestamp - byUid[a][byUid[a].length - 1].timestamp);
 
+        renderStoriesBarUI();
+    }
+
+    function renderStoriesBarUI() {
         const bar = document.getElementById('stories-bar');
+        if (!bar) return;
         bar.innerHTML = "";
 
-        const ownHasStory = !!byUid[currentUid];
+        const ownHasStory = !!storyFeedByUid[currentUid];
         const ownItem = document.createElement('button');
         ownItem.className = 'story-item';
         ownItem.type = 'button';
@@ -2861,13 +3005,18 @@
         };
 
         storyUserOrder.forEach(uid => {
-            const username = byUid[uid][byUid[uid].length - 1].username || "kullanici";
+            const items = storyFeedByUid[uid];
+            const username = items[items.length - 1].username || "kullanici";
+            const latestTimestamp = items[items.length - 1].timestamp;
+            const seenUntil = storySeenMap[uid] || 0;
+            const isSeen = seenUntil >= latestTimestamp;
+
             const item = document.createElement('button');
             item.className = 'story-item';
             item.type = 'button';
             const avatarId = 'story-avatar-' + uid;
             item.innerHTML = `
-                <div class="story-ring has-story">
+                <div class="story-ring ${isSeen ? 'seen' : 'has-story'}">
                     <div class="story-avatar-inner" id="${avatarId}"></div>
                 </div>
                 <span class="story-username">@${username}</span>
@@ -2882,6 +3031,29 @@
         });
     }
 
+    // ===== Hikaye "izlendi" takibi =====
+    function detachStorySeenListener() {
+        if (storySeenRef) storySeenRef.off('value');
+        storySeenRef = null;
+    }
+
+    function listenToStorySeen() {
+        detachStorySeenListener();
+        storySeenRef = database.ref(`storySeen/${currentUid}`);
+        storySeenRef.on('value', snapshot => {
+            storySeenMap = snapshot.val() || {};
+            renderStoriesBarUI();
+        });
+    }
+
+    function markStorySeen(ownerUid, timestamp) {
+        if (!currentUid || ownerUid === currentUid) return;
+        const current = storySeenMap[ownerUid] || 0;
+        if (timestamp <= current) return;
+        storySeenMap[ownerUid] = timestamp;
+        database.ref(`storySeen/${currentUid}/${ownerUid}`).set(timestamp).catch(() => {});
+    }
+
     function triggerStoryUpload() {
         if (!currentUid || blockedByTimeout()) return;
         document.getElementById('story-input').click();
@@ -2892,18 +3064,29 @@
         event.target.value = "";
         if (!file || !currentUid) return;
 
-        resizeImageFile(file, 1080, 0.85)
-            .then(blob => uploadStory(blob))
-            .catch(() => alert("Hikaye işlenemedi. Lütfen başka bir resim dene."));
+        const isVideo = file.type.startsWith('video/');
+
+        if (isVideo) {
+            if (file.size > 30 * 1024 * 1024) {
+                alert("Hikaye videosu 30MB'den küçük olmalı.");
+                return;
+            }
+            uploadStory(file, 'video');
+        } else {
+            resizeImageFile(file, 1080, 0.85)
+                .then(blob => uploadStory(blob, 'image'))
+                .catch(() => alert("Hikaye işlenemedi. Lütfen başka bir resim dene."));
+        }
     }
 
-    function uploadStory(blob) {
+    function uploadStory(fileOrBlob, mediaType) {
         const storyId = database.ref(`stories/${currentUid}`).push().key;
         const expiresAtISO = new Date(Date.now() + STORY_LIFETIME_MS).toISOString();
 
-        return uploadStoryToPocketBase(blob, expiresAtISO)
+        return uploadStoryToPocketBase(fileOrBlob, expiresAtISO)
             .then(url => database.ref(`stories/${currentUid}/${storyId}`).set({
-                imageUrl: url,
+                mediaUrl: url,
+                mediaType: mediaType || 'image',
                 timestamp: Date.now(),
                 username: currentUser
             }))
@@ -2925,6 +3108,8 @@
         loadStory();
     }
 
+    let currentViewedStory = null;
+
     function loadStory() {
         const uid = storyViewerOrder[activeStoryUserIndex];
         if (!uid) { closeStoryViewer(); return; }
@@ -2934,8 +3119,27 @@
         if (activeStoryIndex < 0) { goToPrevStoryUser(); return; }
 
         const story = items[activeStoryIndex];
-        document.getElementById('story-viewer-image').src = story.imageUrl;
+        currentViewedStory = { ownerUid: uid, storyId: story.id };
+        const imageEl = document.getElementById('story-viewer-image');
+        const videoEl = document.getElementById('story-viewer-video');
+
+        if (story.mediaType === 'video') {
+            imageEl.style.display = 'none';
+            imageEl.src = '';
+            videoEl.style.display = 'block';
+            videoEl.src = story.mediaUrl;
+            videoEl.currentTime = 0;
+            videoEl.play().catch(() => {});
+        } else {
+            videoEl.pause();
+            videoEl.style.display = 'none';
+            videoEl.src = '';
+            imageEl.style.display = 'block';
+            imageEl.src = story.mediaUrl;
+        }
+
         document.getElementById('story-viewer-username').textContent = "@" + story.username;
+        document.getElementById('story-admin-delete-btn').style.display = isCurrentUserAdmin ? 'flex' : 'none';
 
         fetchUserProfile(uid).then(profile => {
             styleAvatarElement(document.getElementById('story-viewer-avatar'), profile.photoURL, story.username);
@@ -2943,6 +3147,7 @@
 
         buildStoryProgressBar(items.length, activeStoryIndex);
         startStoryTimer();
+        markStorySeen(uid, story.timestamp);
     }
 
     function buildStoryProgressBar(count, activeIndex) {
@@ -3015,8 +3220,23 @@
     function closeStoryViewer() {
         clearStoryTimer();
         hideOverlay('story-viewer-overlay');
+        const videoEl = document.getElementById('story-viewer-video');
+        if (videoEl) { videoEl.pause(); videoEl.src = ''; }
         activeStoryUserIndex = -1;
         activeStoryIndex = 0;
+        currentViewedStory = null;
+    }
+
+    function deleteCurrentStoryAsAdmin() {
+        if (!isCurrentUserAdmin || !currentViewedStory) return;
+        if (!confirm("Bu hikayeyi kalıcı olarak silmek istediğine emin misin?")) return;
+
+        const { ownerUid, storyId } = currentViewedStory;
+        database.ref(`stories/${ownerUid}/${storyId}`).remove()
+            .then(() => {
+                closeStoryViewer();
+            })
+            .catch(err => alert("Silinemedi: " + (err && err.message ? err.message : "bilinmeyen hata")));
     }
 
     // ===== Reels =====
