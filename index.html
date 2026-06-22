@@ -1813,6 +1813,19 @@
     </div>
 </div>
 
+<div id="theme-panel-overlay" class="reel-share-overlay">
+    <div class="reel-share-box" style="max-width: 320px;">
+        <div style="font-weight: 700; font-size: 16px; margin-bottom: 14px;">Sohbet Teması</div>
+        <button type="button" class="theme-option-btn" id="theme-option-default" onclick="setChatTheme('default')">
+            <span class="theme-swatch theme-swatch-default"></span> Default
+        </button>
+        <button type="button" class="theme-option-btn" id="theme-option-love" onclick="setChatTheme('love')">
+            <span class="theme-swatch theme-swatch-love"></span> Love 💕
+        </button>
+        <button type="button" class="reel-share-cancel" style="width: 100%; margin-top: 4px;" onclick="closeThemePanel()">Kapat</button>
+    </div>
+</div>
+
 <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoSelected(event)">
 <input type="file" id="story-input" accept="image/*,video/*" style="display:none" onchange="handleStorySelected(event)">
 <input type="file" id="reel-input" accept="video/*" style="display:none" onchange="handleReelSelected(event)">
@@ -2360,6 +2373,7 @@
             document.getElementById('nav-reels').classList.add('active');
         } else if (tabName === 'chat') {
             document.getElementById('chat-page').classList.add('active');
+            applyChatTheme();
             scrollToBottom();
         } else if (tabName === 'search') {
             document.getElementById('search-page').classList.add('active');
@@ -2383,6 +2397,65 @@
             menu.classList.remove('active');
         }
     });
+
+    // ===== Sohbet menüsü (üç nokta) ve tema seçimi =====
+    function toggleChatMenu(event) {
+        if (event) event.stopPropagation();
+        document.getElementById('chat-menu').classList.toggle('active');
+    }
+
+    document.addEventListener('click', (event) => {
+        const menu = document.getElementById('chat-menu');
+        if (!menu || !menu.classList.contains('active')) return;
+        const dotsBtn = menu.parentElement.querySelector('.icon-btn[aria-label="Sohbet menüsü"]');
+        if (!menu.contains(event.target) && event.target !== dotsBtn && !dotsBtn.contains(event.target)) {
+            menu.classList.remove('active');
+        }
+    });
+
+    function openThemePanel() {
+        document.getElementById('chat-menu').classList.remove('active');
+        const current = localStorage.getItem('lc_chat_theme') || 'default';
+        document.getElementById('theme-option-default').classList.toggle('active', current === 'default');
+        document.getElementById('theme-option-love').classList.toggle('active', current === 'love');
+        showOverlay('theme-panel-overlay');
+    }
+
+    function closeThemePanel() {
+        hideOverlay('theme-panel-overlay');
+    }
+
+    function setChatTheme(theme) {
+        localStorage.setItem('lc_chat_theme', theme);
+        applyChatTheme();
+        closeThemePanel();
+    }
+
+    function applyChatTheme() {
+        const theme = localStorage.getItem('lc_chat_theme') || 'default';
+        const chatPage = document.getElementById('chat-page');
+        chatPage.classList.toggle('theme-love', theme === 'love');
+        spawnLoveHearts();
+    }
+
+    function spawnLoveHearts() {
+        const layer = document.getElementById('love-hearts-layer');
+        if (!layer) return;
+        layer.innerHTML = "";
+
+        const theme = localStorage.getItem('lc_chat_theme') || 'default';
+        if (theme !== 'love') return;
+
+        for (let i = 0; i < 10; i++) {
+            const heart = document.createElement('i');
+            heart.className = 'fa-solid fa-heart love-heart';
+            heart.style.left = Math.random() * 90 + '%';
+            heart.style.fontSize = (12 + Math.random() * 14) + 'px';
+            heart.style.animationDelay = (Math.random() * 9) + 's';
+            heart.style.animationDuration = (7 + Math.random() * 5) + 's';
+            layer.appendChild(heart);
+        }
+    }
 
     function buildConversationId(uidA, uidB) {
         return [uidA, uidB].sort().join("_");
