@@ -1997,6 +1997,11 @@
     // "id = @request.auth.id" / "@request.auth != null" kurallarına çarpıp 403 döner.
     // Şifreyi rastgele üretip Firebase'e (sadece o kullanıcının okuyabileceği pbUserMap
     // altına) kaydediyoruz ki farklı cihaz/oturumda da aynı hesaba tekrar login olabilelim.
+    // NOT: authWithPassword'da "username" değil "email" kullanıyoruz — PocketBase'de
+    // varsayılan Identity Field email'dir, username'i ayrıca identity field yapmadıysan
+    // (Options > Password auth > Identity fields) username ile login "Failed to
+    // authenticate" (400) hatası verir. Email her auth koleksiyonunda hazır geldiği için
+    // ek bir panel ayarı gerektirmiyor.
     function generatePocketBasePassword() {
         return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2) + "Aa1!";
     }
@@ -2007,9 +2012,12 @@
         if (pbUserRecordPromise) return pbUserRecordPromise; // eşzamanlı çağrılar aynı isteği paylaşsın
 
         pbUserRecordPromise = database.ref(`pbUserMap/${currentUid}`).once('value').then(snapshot => {
-            if (snapshot.exists()) {
-                const mapped = snapshot.val(); // { id, username, password }
-                return pb.collection('users').authWithPassword(mapped.username, mapped.password)
+            const mapped = snapshot.exists() ? snapshot.val() : null;
+
+            // Eski (username tabanlı) bir eşleme varsa da geçerli sayma — email alanı yoksa
+            // aşağıdaki create() dalına düşüp yeni, email tabanlı bir hesap oluşturulacak.
+            if (mapped && mapped.email && mapped.password) {
+                return pb.collection('users').authWithPassword(mapped.email, mapped.password)
                     .then(() => {
                         pbUserRecordCache = mapped.id;
                         return pbUserRecordCache;
@@ -2017,18 +2025,20 @@
             }
 
             const username = "fb_" + currentUid.slice(0, 24);
+            const email = username + "@lostchatting.local";
             const password = generatePocketBasePassword();
 
             return pb.collection('users').create({
+                email: email,
                 username: username,
                 password: password,
                 passwordConfirm: password
             }).then(record => {
-                return pb.collection('users').authWithPassword(username, password).then(() => {
+                return pb.collection('users').authWithPassword(email, password).then(() => {
                     pbUserRecordCache = record.id;
                     return database.ref(`pbUserMap/${currentUid}`).set({
                         id: record.id,
-                        username: username,
+                        email: email,
                         password: password
                     }).then(() => record.id);
                 });
