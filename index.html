@@ -1850,14 +1850,27 @@
     const database = firebase.database();
 
     // ===== PocketBase (yalnızca dosya barındırma: profil fotoğrafı / story / reels) =====
-    // Kimlik doğrulama hâlâ Firebase Auth üzerinden; PocketBase'e ayrıca login OLUNMUYOR.
-    // Bu yüzden "users" koleksiyonundaki Update kuralı (id = @request.auth.id) bu istemciden
-    // tetiklenemez — sadece halka açık olan create() çağrılarını kullanıyoruz (bkz. açıklama).
-    const POCKETBASE_URL = "https://comfy-sherry-roaming.ngrok-free.dev";
+    // Kimlik hâlâ Firebase Auth'ta, ama PocketBase tarafında da "users" koleksiyonuna her
+    // kullanıcı için otomatik bir gölge hesap açıp authWithPassword ile login oluyoruz
+    // (bkz. ensurePocketBaseUserRecord) — bu, avatar update() ve reels/stories create()
+    // işlemlerinin "@request.auth" kontrollerini geçebilmesi için gerekli.
+    const POCKETBASE_URL = "https://lostchatting.shares.zrok.io";
     const pb = new PocketBase(POCKETBASE_URL);
 
     function buildPocketBaseFileUrl(record, filename) {
         if (!record || !filename) return null;
+        // Önce SDK'nın kendi helper'ını dene (sürüme göre adı getUrl/getURL olabiliyor),
+        // yoksa PocketBase'in dokümante edilen sabit URL kalıbına göre manuel oluştur.
+        try {
+            if (pb.files && typeof pb.files.getUrl === 'function') {
+                return pb.files.getUrl(record, filename);
+            }
+            if (pb.files && typeof pb.files.getURL === 'function') {
+                return pb.files.getURL(record, filename);
+            }
+        } catch (e) {
+            console.warn("pb.files.getUrl kullanılamadı, manuel URL oluşturuluyor:", e);
+        }
         const collection = record.collectionId || record.collectionName;
         return `${POCKETBASE_URL}/api/files/${collection}/${record.id}/${filename}`;
     }
@@ -1976,17 +1989,11 @@
     }
 
     // ===== PocketBase dosya yükleme yardımcıları =====
-    // PocketBase'e GİRİŞ YAPMIYORUZ (kimlik hâlâ Firebase Auth'ta). "users" koleksiyonunun
-    // Update kuralı (id = @request.auth.id) bu yüzden bizim için hiç tetiklenmeyecek/işe
-    // yaramayacak — sadece herkese açık olan create() kullanıyoruz, asla update() kullanmıyoruz.
-    // Bu yüzden profil fotoğrafı değiştirmek de "üzerine yazma" değil, her seferinde YENİ bir
-    // PocketBase kaydı oluşturmak şeklinde çalışır (Supabase'deki mantıkla aynı).
-
-    // ÖNEMLİ DÜZELTME: "users" PocketBase'de bir AUTH koleksiyonu — create() çağrısı
-    // password/passwordConfirm istiyor (sıradan bir "base" koleksiyon gibi davranmıyor).
-    // Ayrıca reels/stories'in Create kuralı "giriş yapan kullanıcılar" dediği için, sadece
-    // kaydı oluşturmak yetmiyor; PocketBase'e bu kayıtla GERÇEKTEN login de olmamız gerekiyor
-    // (authWithPassword), yoksa hem avatar update'i hem reels/stories create'i
+    // "users" PocketBase'de bir AUTH koleksiyonu — create() çağrısı password/passwordConfirm
+    // istiyor (sıradan bir "base" koleksiyon gibi davranmıyor). Ayrıca reels/stories'in Create
+    // kuralı "giriş yapan kullanıcılar" dediği için, sadece kaydı oluşturmak yetmiyor;
+    // PocketBase'e bu kayıtla GERÇEKTEN login de olmamız gerekiyor (authWithPassword), yoksa
+    // hem avatar update'i hem reels/stories create'i
     // "id = @request.auth.id" / "@request.auth != null" kurallarına çarpıp 403 döner.
     // Şifreyi rastgele üretip Firebase'e (sadece o kullanıcının okuyabileceği pbUserMap
     // altına) kaydediyoruz ki farklı cihaz/oturumda da aynı hesaba tekrar login olabilelim.
