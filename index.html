@@ -9,7 +9,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pocketbase@latest/dist/pocketbase.umd.js"></script>
 
     <style>
         * { box-sizing: border-box; }
@@ -1849,30 +1848,25 @@
     const auth = firebase.auth();
     const database = firebase.database();
 
-    // ===== PocketBase (yalnızca dosya barındırma: profil fotoğrafı / story / reels) =====
-    // Kimlik hâlâ Firebase Auth'ta, ama PocketBase tarafında da "users" koleksiyonuna her
-    // kullanıcı için otomatik bir gölge hesap açıp authWithPassword ile login oluyoruz
-    // (bkz. ensurePocketBaseUserRecord) — bu, avatar update() ve reels/stories create()
-    // işlemlerinin "@request.auth" kontrollerini geçebilmesi için gerekli.
-    const POCKETBASE_URL = "https://lostchatting.shares.zrok.io";
-    const pb = new PocketBase(POCKETBASE_URL);
+    // ===== Dosya sunucusu (kendi Node.js sunucun, 92.44.28.148:8090) =====
+    // Kimlik doğrulama tamamen Firebase Auth'ta — dosya sunucusu sadece upload/download yapar.
+    const FILE_SERVER_URL = "http://92.44.28.148:8090";
 
-    function buildPocketBaseFileUrl(record, filename) {
-        if (!record || !filename) return null;
-        // Önce SDK'nın kendi helper'ını dene (sürüme göre adı getUrl/getURL olabiliyor),
-        // yoksa PocketBase'in dokümante edilen sabit URL kalıbına göre manuel oluştur.
-        try {
-            if (pb.files && typeof pb.files.getUrl === 'function') {
-                return pb.files.getUrl(record, filename);
-            }
-            if (pb.files && typeof pb.files.getURL === 'function') {
-                return pb.files.getURL(record, filename);
-            }
-        } catch (e) {
-            console.warn("pb.files.getUrl kullanılamadı, manuel URL oluşturuluyor:", e);
-        }
-        const collection = record.collectionId || record.collectionName;
-        return `${POCKETBASE_URL}/api/files/${collection}/${record.id}/${filename}`;
+    // Tüm upload'lar bu fonksiyondan geçer
+    function uploadToFileServer(endpoint, fieldName, file, filename) {
+        const formData = new FormData();
+        formData.append(fieldName, file, filename || file.name || 'upload');
+
+        return fetch(FILE_SERVER_URL + endpoint, {
+            method: 'POST',
+            body: formData
+        }).then(function(res) {
+            if (!res.ok) throw new Error('Sunucu hatası: ' + res.status + ' ' + res.statusText);
+            return res.json();
+        }).then(function(data) {
+            if (!data.url) throw new Error('Sunucu URL döndürmedi: ' + JSON.stringify(data));
+            return data.url;
+        });
     }
 
     const USERNAME_PATTERN = /^[a-z0-9._]{3,24}$/;
@@ -1921,8 +1915,6 @@
     let adminIpAllowed = false;
     let moderationRef = null;
     let adminUsersCache = [];
-    let pbUserRecordCache = null;
-    let pbUserRecordPromise = null;
     let myModerationRef = null;
     let timeoutBannerTimer = null;
     let myTimeoutUntil = null;
@@ -1988,107 +1980,6 @@
         document.getElementById(id).classList.remove('active');
     }
 
-    // ===== PocketBase dosya yükleme yardımcıları =====
-    // "users" PocketBase'de bir AUTH koleksiyonu — create() çağrısı password/passwordConfirm
-    // istiyor (sıradan bir "base" koleksiyon gibi davranmıyor). Ayrıca reels/stories'in Create
-    // kuralı "giriş yapan kullanıcılar" dediği için, sadece kaydı oluşturmak yetmiyor;
-    // PocketBase'e bu kayıtla GERÇEKTEN login de olmamız gerekiyor (authWithPassword), yoksa
-    // hem avatar update'i hem reels/stories create'i
-    // "id = @request.auth.id" / "@request.auth != null" kurallarına çarpıp 403 döner.
-    // Şifreyi rastgele üretip Firebase'e (sadece o kullanıcının okuyabileceği pbUserMap
-    // altına) kaydediyoruz ki farklı cihaz/oturumda da aynı hesaba tekrar login olabilelim.
-    // NOT: authWithPassword'da "username" değil "email" kullanıyoruz — PocketBase'de
-    // varsayılan Identity Field email'dir, username'i ayrıca identity field yapmadıysan
-    // (Options > Password auth > Identity fields) username ile login "Failed to
-    // authenticate" (400) hatası verir. Email her auth koleksiyonunda hazır geldiği için
-    // ek bir panel ayarı gerektirmiyor.
-    function generatePocketBasePassword() {
-        return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2) + "Aa1!";
-    }
-
-    function ensurePocketBaseUserRecord() {
-        if (pbUserRecordCache) return Promise.resolve(pbUserRecordCache);
-        if (!currentUid) return Promise.reject(new Error("Oturum açık değil"));
-        if (pbUserRecordPromise) return pbUserRecordPromise; // eşzamanlı çağrılar aynı isteği paylaşsın
-
-        pbUserRecordPromise = database.ref(`pbUserMap/${currentUid}`).once('value').then(snapshot => {
-            const mapped = snapshot.exists() ? snapshot.val() : null;
-
-            // Eski (username tabanlı) bir eşleme varsa da geçerli sayma — email alanı yoksa
-            // aşağıdaki create() dalına düşüp yeni, email tabanlı bir hesap oluşturulacak.
-            if (mapped && mapped.email && mapped.password) {
-                return pb.collection('users').authWithPassword(mapped.email, mapped.password)
-                    .then(() => {
-                        pbUserRecordCache = mapped.id;
-                        return pbUserRecordCache;
-                    });
-            }
-
-            const username = "fb_" + currentUid.slice(0, 24);
-            const email = username + "@lostchatting.local";
-            const password = generatePocketBasePassword();
-
-            return pb.collection('users').create({
-                email: email,
-                username: username,
-                password: password,
-                passwordConfirm: password
-            }).then(record => {
-                return pb.collection('users').authWithPassword(email, password).then(() => {
-                    pbUserRecordCache = record.id;
-                    return database.ref(`pbUserMap/${currentUid}`).set({
-                        id: record.id,
-                        email: email,
-                        password: password
-                    }).then(() => record.id);
-                });
-            });
-        }).finally(() => {
-            pbUserRecordPromise = null;
-        });
-
-        return pbUserRecordPromise;
-    }
-
-    function uploadProfilePhotoToPocketBase(blob) {
-        return ensurePocketBaseUserRecord().then(pbUserId => {
-            const formData = new FormData();
-            formData.append('avatar', blob, 'avatar.jpg');
-
-            return pb.collection('users').update(pbUserId, formData).then(record => {
-                return buildPocketBaseFileUrl(record, record.avatar);
-            });
-        });
-    }
-
-    function uploadStoryToPocketBase(fileOrBlob, expiresAtISO) {
-        return ensurePocketBaseUserRecord().then(pbUserId => {
-            const isVideo = fileOrBlob.type && fileOrBlob.type.startsWith('video/');
-            const filename = fileOrBlob.name || (isVideo ? 'story.mp4' : 'story.jpg');
-
-            const formData = new FormData();
-            formData.append('user_id', pbUserId);
-            formData.append('media', fileOrBlob, filename);
-            formData.append('expires_at', expiresAtISO);
-
-            return pb.collection('stories').create(formData).then(record => {
-                return buildPocketBaseFileUrl(record, record.media);
-            });
-        });
-    }
-
-    function uploadReelToPocketBase(file, description) {
-        return ensurePocketBaseUserRecord().then(pbUserId => {
-            const formData = new FormData();
-            formData.append('user_id', pbUserId);
-            formData.append('video', file, file.name || 'reel.mp4');
-            formData.append('description', description || '');
-
-            return pb.collection('reels').create(formData).then(record => {
-                return buildPocketBaseFileUrl(record, record.video);
-            });
-        });
-    }
 
     function resizeImageFile(file, maxDim, quality) {
         return new Promise((resolve, reject) => {
@@ -2171,7 +2062,7 @@
     }
 
     function uploadProfilePhoto(blob) {
-        return uploadProfilePhotoToPocketBase(blob)
+        return uploadToFileServer('/upload/profile', 'avatar', blob, 'avatar.jpg')
             .then(url => database.ref(`users/${currentUid}`).update({ photoURL: url }).then(() => url))
             .then(url => {
                 currentPhotoURL = url;
@@ -2180,7 +2071,7 @@
             })
             .catch(err => {
                 console.error("Profil fotoğrafı yükleme hatası:", err);
-                alert("Fotoğraf yüklenemedi: " + (err && err.message ? err.message : "bilinmeyen hata") + "\n\n(Detay için F12 > Console'a bak; PocketBase sunucunun çalıştığından ve CORS/mixed-content engeli olmadığından emin ol)");
+                alert("Fotoğraf yüklenemedi: " + (err && err.message ? err.message : "bilinmeyen hata") + "\n\n(Detay için F12 > Console'a bak)");
             });
     }
 
@@ -2246,9 +2137,6 @@
         detachStorySeenListener();
         detachReelsListener();
         detachModerationListener();
-        pbUserRecordCache = null;
-        pbUserRecordPromise = null;
-        try { pb.authStore.clear(); } catch (e) {}
         auth.signOut().then(() => window.location.reload());
     }
 
@@ -3171,9 +3059,10 @@
 
     function uploadStory(fileOrBlob, mediaType) {
         const storyId = database.ref(`stories/${currentUid}`).push().key;
-        const expiresAtISO = new Date(Date.now() + STORY_LIFETIME_MS).toISOString();
+        const isVideo = mediaType === 'video';
+        const filename = isVideo ? 'story.mp4' : 'story.jpg';
 
-        return uploadStoryToPocketBase(fileOrBlob, expiresAtISO)
+        return uploadToFileServer('/upload/story', 'media', fileOrBlob, filename)
             .then(url => database.ref(`stories/${currentUid}/${storyId}`).set({
                 mediaUrl: url,
                 mediaType: mediaType || 'image',
@@ -3182,7 +3071,7 @@
             }))
             .catch(err => {
                 console.error("Hikaye yükleme hatası:", err);
-                alert("Hikaye yüklenemedi: " + (err && err.message ? err.message : "bilinmeyen hata") + "\n\n(Detay için F12 > Console'a bak; PocketBase sunucunun çalıştığından ve CORS/mixed-content engeli olmadığından emin ol)");
+                alert("Hikaye yüklenemedi: " + (err && err.message ? err.message : "bilinmeyen hata") + "\n\n(Detay için F12 > Console'a bak)");
             });
     }
 
@@ -3678,13 +3567,12 @@
         const reelId = database.ref('reels').push().key;
         const confirmBtn = document.getElementById('reel-share-confirm-btn');
         const statusEl = document.getElementById('reel-upload-status');
+        const filename = (file.name) || 'reel.mp4';
 
         confirmBtn.disabled = true;
-        // Not: PocketBase JS SDK'sı şu an upload-progress yüzdesi vermiyor (Supabase'in
-        // onUploadProgress'inin karşılığı yok), o yüzden belirsiz bir "yükleniyor" durumu gösteriyoruz.
         statusEl.textContent = "Yükleniyor, video boyutuna göre biraz sürebilir...";
 
-        uploadReelToPocketBase(file, caption)
+        uploadToFileServer('/upload/reel', 'video', file, filename)
             .then(url => database.ref(`reels/${reelId}`).set({
                 uid: currentUid,
                 username: currentUser,
@@ -3699,7 +3587,7 @@
             })
             .catch(err => {
                 console.error("Reels yükleme hatası:", err);
-                statusEl.textContent = "Paylaşılamadı: " + (err && err.message ? err.message : "bilinmeyen hata") + " (PocketBase sunucu/CORS/mixed-content kontrol et)";
+                statusEl.textContent = "Paylaşılamadı: " + (err && err.message ? err.message : "bilinmeyen hata");
                 confirmBtn.disabled = false;
             });
     }
