@@ -837,7 +837,19 @@
             background: linear-gradient(135deg, #ffd9e8, #ff6fa5);
         }
 
-        /* ===== Love teması: toz pembe zemin + hafif parlayan kalpler ===== */
+        .theme-swatch-dark {
+            background: linear-gradient(135deg, #0d0d2b, #1a1a4e);
+        }
+
+        .theme-swatch-ocean {
+            background: linear-gradient(135deg, #0a2a4a, #1a6b8a);
+        }
+
+        .theme-swatch-forest {
+            background: linear-gradient(135deg, #0d2b0d, #1a4e1a);
+        }
+
+        /* ===== Love teması ===== */
         .theme-love .chat-messages {
             background: linear-gradient(180deg, #2b1620 0%, #1c1018 100%);
             position: relative;
@@ -856,6 +868,96 @@
 
         .theme-love .chat-input-area input {
             background: #2a1620;
+        }
+
+        /* ===== Dark Midnight teması ===== */
+        .theme-dark .chat-messages {
+            background: linear-gradient(180deg, #0a0a1a 0%, #050510 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theme-dark .chat-input-area {
+            background: #07071a;
+            border-top: 1px solid #1a1a3a;
+        }
+
+        .theme-dark .emoji-panel {
+            background: #07071a;
+            border-top: 1px solid #1a1a3a;
+        }
+
+        .theme-dark .chat-input-area input {
+            background: #0f0f2a;
+        }
+
+        .theme-dark .message.sent {
+            background: linear-gradient(135deg, #3d3d9e, #5a5ac2);
+        }
+
+        .theme-dark .message.received {
+            background-color: #14143a;
+            border-color: #2a2a5a;
+        }
+
+        /* ===== Ocean teması ===== */
+        .theme-ocean .chat-messages {
+            background: linear-gradient(180deg, #071e2e 0%, #04111c 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theme-ocean .chat-input-area {
+            background: #05161f;
+            border-top: 1px solid #0d3a52;
+        }
+
+        .theme-ocean .emoji-panel {
+            background: #05161f;
+            border-top: 1px solid #0d3a52;
+        }
+
+        .theme-ocean .chat-input-area input {
+            background: #0a2535;
+        }
+
+        .theme-ocean .message.sent {
+            background: linear-gradient(135deg, #0077b6, #00b4d8);
+        }
+
+        .theme-ocean .message.received {
+            background-color: #0a2535;
+            border-color: #0d4a6a;
+        }
+
+        /* ===== Forest teması ===== */
+        .theme-forest .chat-messages {
+            background: linear-gradient(180deg, #071a07 0%, #040e04 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theme-forest .chat-input-area {
+            background: #051205;
+            border-top: 1px solid #0d3a0d;
+        }
+
+        .theme-forest .emoji-panel {
+            background: #051205;
+            border-top: 1px solid #0d3a0d;
+        }
+
+        .theme-forest .chat-input-area input {
+            background: #0a220a;
+        }
+
+        .theme-forest .message.sent {
+            background: linear-gradient(135deg, #2d6a2d, #52a852);
+        }
+
+        .theme-forest .message.received {
+            background-color: #0a220a;
+            border-color: #1a4a1a;
         }
 
         .love-hearts-layer {
@@ -1172,7 +1274,8 @@
         .reel-item {
             position: relative;
             width: 100%;
-            height: 100%;
+            height: 100dvh;
+            min-height: 100dvh;
             scroll-snap-align: start;
             background: #000;
             display: flex;
@@ -1185,12 +1288,15 @@
             position: relative;
             width: 100%;
             height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .reel-item video {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
         }
 
         .reel-overlay {
@@ -1814,12 +1920,22 @@
 
 <div id="theme-panel-overlay" class="reel-share-overlay">
     <div class="reel-share-box" style="max-width: 320px;">
-        <div style="font-weight: 700; font-size: 16px; margin-bottom: 14px;">Sohbet Teması</div>
+        <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px;">Sohbet Teması</div>
+        <div style="font-size: 11px; color: #777; margin-bottom: 14px;">Bu tema sadece bu konuşmaya uygulanır.</div>
         <button type="button" class="theme-option-btn" id="theme-option-default" onclick="setChatTheme('default')">
             <span class="theme-swatch theme-swatch-default"></span> Default
         </button>
         <button type="button" class="theme-option-btn" id="theme-option-love" onclick="setChatTheme('love')">
             <span class="theme-swatch theme-swatch-love"></span> Love 💕
+        </button>
+        <button type="button" class="theme-option-btn" id="theme-option-dark" onclick="setChatTheme('dark')">
+            <span class="theme-swatch theme-swatch-dark"></span> Dark Midnight 🌙
+        </button>
+        <button type="button" class="theme-option-btn" id="theme-option-ocean" onclick="setChatTheme('ocean')">
+            <span class="theme-swatch theme-swatch-ocean"></span> Ocean 🌊
+        </button>
+        <button type="button" class="theme-option-btn" id="theme-option-forest" onclick="setChatTheme('forest')">
+            <span class="theme-swatch theme-swatch-forest"></span> Forest 🌿
         </button>
         <button type="button" class="reel-share-cancel" style="width: 100%; margin-top: 4px;" onclick="closeThemePanel()">Kapat</button>
     </div>
@@ -2320,9 +2436,14 @@
 
     function openThemePanel() {
         document.getElementById('chat-menu').classList.remove('active');
-        const current = localStorage.getItem('lc_chat_theme') || 'default';
+        if (!activeConversationId) { alert("Önce bir konuşma aç."); return; }
+        const key = 'lc_theme_' + activeConversationId;
+        const current = localStorage.getItem(key) || 'default';
         document.getElementById('theme-option-default').classList.toggle('active', current === 'default');
         document.getElementById('theme-option-love').classList.toggle('active', current === 'love');
+        document.getElementById('theme-option-dark').classList.toggle('active', current === 'dark');
+        document.getElementById('theme-option-ocean').classList.toggle('active', current === 'ocean');
+        document.getElementById('theme-option-forest').classList.toggle('active', current === 'forest');
         showOverlay('theme-panel-overlay');
     }
 
@@ -2331,15 +2452,19 @@
     }
 
     function setChatTheme(theme) {
-        localStorage.setItem('lc_chat_theme', theme);
+        if (!activeConversationId) return;
+        const key = 'lc_theme_' + activeConversationId;
+        localStorage.setItem(key, theme);
         applyChatTheme();
         closeThemePanel();
     }
 
     function applyChatTheme() {
-        const theme = localStorage.getItem('lc_chat_theme') || 'default';
+        const key = activeConversationId ? 'lc_theme_' + activeConversationId : null;
+        const theme = key ? (localStorage.getItem(key) || 'default') : 'default';
         const chatPage = document.getElementById('chat-page');
-        chatPage.classList.toggle('theme-love', theme === 'love');
+        chatPage.className = chatPage.className.replace(/\btheme-\S+/g, '').trim();
+        if (theme !== 'default') chatPage.classList.add('theme-' + theme);
         spawnLoveHearts();
     }
 
@@ -2348,7 +2473,8 @@
         if (!layer) return;
         layer.innerHTML = "";
 
-        const theme = localStorage.getItem('lc_chat_theme') || 'default';
+        const key = activeConversationId ? 'lc_theme_' + activeConversationId : null;
+        const theme = key ? (localStorage.getItem(key) || 'default') : 'default';
         if (theme !== 'love') return;
 
         for (let i = 0; i < 10; i++) {
@@ -2786,7 +2912,9 @@
     // ===== Takipçi / takip edilen listesi =====
     function openListModal(type, uid) {
         const targetUid = uid || currentUid;
-        const ref = type === 'followers' ? database.ref(`followers/${targetUid}`) : database.ref(`following/${targetUid}`);
+        const ref = type === 'followers'
+            ? database.ref(`followers/${targetUid}`)
+            : database.ref(`following/${targetUid}`);
 
         document.getElementById('list-modal-title').innerText = type === 'followers' ? "Takipçiler" : "Takip Edilenler";
         const resultsBox = document.getElementById('list-modal-results');
@@ -2795,17 +2923,26 @@
 
         ref.once('value').then(snapshot => {
             const uids = [];
-            snapshot.forEach(child => uids.push(child.key));
+            // snapshot.val() ile tüm child key'leri güvenilir şekilde al
+            const val = snapshot.val();
+            if (val && typeof val === 'object') {
+                Object.keys(val).forEach(key => uids.push(key));
+            }
 
             if (uids.length === 0) {
                 resultsBox.innerHTML = `<div class="search-empty">${type === 'followers' ? 'Henüz takipçi yok.' : 'Henüz kimse takip edilmiyor.'}</div>`;
                 return;
             }
 
-            Promise.all(uids.map(id => fetchUserProfile(id))).then(profiles => {
-                resultsBox.innerHTML = "";
-                profiles.forEach(profile => resultsBox.appendChild(buildUserRow(profile)));
+            // Profilleri sırayla çek ve DOM'a ekle (hepsini beklemeden)
+            resultsBox.innerHTML = "";
+            uids.forEach(id => {
+                fetchUserProfile(id).then(profile => {
+                    resultsBox.appendChild(buildUserRow(profile));
+                });
             });
+        }).catch(err => {
+            resultsBox.innerHTML = `<div class="search-empty">Liste alınamadı: ${err && err.message ? err.message : 'hata'}</div>`;
         });
     }
 
