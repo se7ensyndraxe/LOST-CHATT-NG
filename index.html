@@ -136,10 +136,15 @@
             justify-content: space-between;
             align-items: center;
             padding: 10px 15px;
-            border-bottom: 1px solid #262626;
+            border-bottom: 1px solid #1a1a1a;
             min-height: 54px;
             flex-shrink: 0;
-            background: #000;
+            background: rgba(0,0,0,0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
         .logo {
@@ -169,8 +174,8 @@
         }
 
         .icon-btn {
-            width: 38px;
-            height: 38px;
+            width: 40px;
+            height: 40px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -179,6 +184,16 @@
             border: 0;
             cursor: pointer;
             border-radius: 50%;
+            transition: background 0.18s, transform 0.15s;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .icon-btn:active {
+            transform: scale(0.88);
+            background: rgba(255,255,255,0.13);
         }
 
         .icon-btn i,
@@ -189,7 +204,7 @@
 
         .icon-btn:hover i,
         .header-icons i:hover {
-            color: #aaa;
+            color: #e0e0e0;
         }
 
         .page {
@@ -203,13 +218,19 @@
         .page.active {
             display: flex;
             flex-direction: column;
+            animation: page-in 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+        }
+
+        @keyframes page-in {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         .profile-header {
             display: flex;
             align-items: center;
             padding: 20px;
-            border-bottom: 1px solid #262626;
+            border-bottom: 1px solid #1e1e1e;
         }
 
         .profile-avatar {
@@ -218,8 +239,16 @@
             border-radius: 50%;
             background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
             padding: 3px;
-            margin-right: 20px;
-            flex-shrink: 0;
+            cursor: pointer;
+            transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+        }
+
+        .profile-avatar:hover {
+            transform: scale(1.06);
+        }
+
+        .profile-avatar:active {
+            transform: scale(0.95);
         }
 
         .profile-avatar-inner {
@@ -378,22 +407,35 @@
         }
 
         .conversation-pill {
-            border: 1px solid #303030;
+            border: 1px solid #2a2a2a;
             background: #111;
-            color: #fff;
+            color: #ccc;
             border-radius: 999px;
-            padding: 8px 12px;
+            padding: 8px 14px;
             cursor: pointer;
             white-space: nowrap;
             max-width: 170px;
             overflow: hidden;
             text-overflow: ellipsis;
             flex-shrink: 0;
+            font-size: 13px;
+            transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.15s;
+        }
+
+        .conversation-pill:hover {
+            background: #1a1a1a;
+            border-color: #404040;
+        }
+
+        .conversation-pill:active {
+            transform: scale(0.95);
         }
 
         .conversation-pill.active {
             border-color: #0095f6;
-            color: #0095f6;
+            background: rgba(0, 149, 246, 0.12);
+            color: #4db5ff;
+            font-weight: 600;
         }
 
         .chat-status {
@@ -573,8 +615,10 @@
             max-width: 450px;
             min-height: calc(58px + env(safe-area-inset-bottom));
             padding: 6px 12px calc(6px + env(safe-area-inset-bottom));
-            background-color: #000;
-            border-top: 1px solid #262626;
+            background: rgba(0,0,0,0.88);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid #1a1a1a;
             display: flex;
             justify-content: space-around;
             align-items: center;
@@ -582,17 +626,18 @@
         }
 
         .nav-item {
-            width: 44px;
-            height: 44px;
+            width: 48px;
+            height: 48px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             background: transparent;
             border: 0;
-            color: #777;
+            color: #666;
             cursor: pointer;
             border-radius: 50%;
-            transition: transform 0.2s, color 0.2s;
+            transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), color 0.18s, background 0.18s;
+            position: relative;
         }
 
         .nav-item i {
@@ -600,11 +645,29 @@
         }
 
         .nav-item:hover {
-            transform: scale(1.08);
+            transform: scale(1.15);
+            color: #ccc;
+            background: rgba(255,255,255,0.06);
+        }
+
+        .nav-item:active {
+            transform: scale(0.9);
         }
 
         .nav-item.active {
             color: #fff;
+        }
+
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #fff;
         }
 
         @media (max-width: 380px) {
@@ -665,7 +728,11 @@
             background: none;
             border: 0;
             color: #fff;
+            transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
         }
+
+        .story-item:hover { transform: scale(1.08); }
+        .story-item:active { transform: scale(0.93); }
 
         .story-ring {
             width: 60px;
@@ -984,6 +1051,162 @@
             100% { transform: translateY(-260px) scale(1.05); opacity: 0; }
         }
 
+        /* ===== Bildirim badge ===== */
+        .notif-btn {
+            position: relative;
+        }
+
+        .notif-badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            min-width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            background: #ed4956;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 3px;
+            pointer-events: none;
+        }
+
+        /* ===== Bildirim satırı ===== */
+        .notif-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #1a1a1a;
+            cursor: pointer;
+        }
+
+        .notif-row:hover { background: #0a0a0a; }
+
+        .notif-row.unread {
+            background: #0d0d1a;
+        }
+
+        .notif-row.unread:hover { background: #111128; }
+
+        .notif-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            font-size: 16px;
+        }
+
+        .notif-text {
+            flex: 1;
+            min-width: 0;
+            font-size: 13px;
+            color: #eee;
+            line-height: 1.4;
+        }
+
+        .notif-text strong { color: #fff; font-weight: 700; }
+
+        .notif-time {
+            font-size: 11px;
+            color: #777;
+            flex-shrink: 0;
+        }
+
+        .notif-thumb {
+            width: 44px;
+            height: 44px;
+            object-fit: cover;
+            border-radius: 6px;
+            background: #111;
+            flex-shrink: 0;
+        }
+
+        /* ===== Yorum paneli ===== */
+        .comment-row {
+            display: flex;
+            gap: 10px;
+            padding: 11px 14px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .comment-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+
+        .comment-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .comment-username {
+            font-weight: 700;
+            font-size: 13px;
+            margin-bottom: 2px;
+        }
+
+        .comment-text {
+            font-size: 14px;
+            color: #ddd;
+            word-break: break-word;
+        }
+
+        .comment-time {
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .comment-composer {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-top: 1px solid #262626;
+            background: #000;
+            flex-shrink: 0;
+        }
+
+        .comment-composer-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            font-size: 13px;
+        }
+
+        .comment-input {
+            flex: 1;
+            background: #161616;
+            border: 1px solid #303030;
+            color: #fff;
+            padding: 9px 12px;
+            border-radius: 20px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .comment-input:focus { border-color: #555; }
+
+        .comment-send-btn {
+            background: none;
+            border: 0;
+            color: #0095f6;
+            font-size: 18px;
+            cursor: pointer;
+            flex-shrink: 0;
+            padding: 4px;
+        }
+
+        .comment-send-btn:disabled { color: #444; cursor: default; }
+
         /* ===== Admin paneli ===== */
         .admin-tabs {
             display: flex;
@@ -1198,7 +1421,10 @@
             border-radius: 8px;
             cursor: pointer;
             flex-shrink: 0;
+            transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1), opacity 0.15s;
         }
+
+        .row-follow-btn:active { transform: scale(0.92); }
 
         .row-follow-btn.following {
             background: transparent;
@@ -1220,12 +1446,18 @@
             display: none;
             flex-direction: column;
             z-index: 40;
-            border-left: 1px solid #262626;
-            border-right: 1px solid #262626;
+            border-left: 1px solid #1e1e1e;
+            border-right: 1px solid #1e1e1e;
         }
 
         .overlay-page.active {
             display: flex;
+            animation: slide-in-right 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+        }
+
+        @keyframes slide-in-right {
+            from { opacity: 0; transform: translateX(calc(-50% + 22px)); }
+            to   { opacity: 1; transform: translateX(-50%); }
         }
 
         .follow-action-row {
@@ -1240,28 +1472,36 @@
             color: #fff;
             border: 0;
             padding: 11px;
-            border-radius: 8px;
+            border-radius: 10px;
             font-weight: 700;
             font-size: 14px;
             cursor: pointer;
+            transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1), filter 0.15s;
         }
 
+        .follow-btn-main:hover { filter: brightness(1.1); }
+        .follow-btn-main:active { transform: scale(0.94); }
+
         .follow-btn-main.following {
-            background: #262626;
+            background: #1c1c1c;
             border: 1px solid #333;
         }
 
         .message-btn-main {
             flex: 1;
-            background: #262626;
+            background: #1c1c1c;
             color: #fff;
             border: 1px solid #333;
             padding: 11px;
-            border-radius: 8px;
+            border-radius: 10px;
             font-weight: 700;
             font-size: 14px;
             cursor: pointer;
+            transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1), background 0.15s;
         }
+
+        .message-btn-main:hover { background: #2a2a2a; }
+        .message-btn-main:active { transform: scale(0.94); }
 
         /* ===== Reels ===== */
         .reels-feed {
@@ -1357,7 +1597,22 @@
         }
 
         .reel-like-btn.bump i {
-            transform: scale(1.25);
+            animation: heart-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+        }
+
+        @keyframes heart-pop {
+            0%   { transform: scale(1); }
+            40%  { transform: scale(1.55); }
+            70%  { transform: scale(0.88); }
+            100% { transform: scale(1); }
+        }
+
+        .reel-like-btn {
+            transition: opacity 0.15s;
+        }
+
+        .reel-like-btn:active {
+            opacity: 0.7;
         }
 
         .reel-admin-delete i {
@@ -1707,7 +1962,10 @@
         <div class="header">
             <div class="logo">LOST CHATTİNG</div>
             <div class="header-icons">
-                <button class="icon-btn" aria-label="Bildirimler"><i class="fa-regular fa-heart"></i></button>
+                <button class="icon-btn notif-btn" aria-label="Bildirimler" onclick="openNotifPanel()">
+                    <i class="fa-regular fa-heart"></i>
+                    <span class="notif-badge" id="notif-badge" style="display:none"></span>
+                </button>
                 <button class="icon-btn" aria-label="Mesajlar" onclick="switchTab('chat')"><i class="fa-brands fa-facebook-messenger"></i></button>
             </div>
         </div>
@@ -1850,6 +2108,31 @@
             <div style="width: 38px;"></div>
         </div>
         <div class="search-results" id="list-modal-results"></div>
+    </div>
+
+    <!-- Bildirim paneli -->
+    <div id="notif-panel-overlay" class="overlay-page">
+        <div class="header">
+            <button class="icon-btn" aria-label="Geri" onclick="closeNotifPanel()"><i class="fa-solid fa-arrow-left"></i></button>
+            <div class="username" style="font-size:16px;">Bildirimler</div>
+            <button class="icon-btn" aria-label="Tümünü okundu yap" onclick="markAllNotifsRead()" title="Tümünü okundu işaretle"><i class="fa-solid fa-check-double"></i></button>
+        </div>
+        <div class="search-results" id="notif-list"><div class="search-hint">Yükleniyor...</div></div>
+    </div>
+
+    <!-- Yorum paneli (reels) -->
+    <div id="comment-panel-overlay" class="overlay-page">
+        <div class="header">
+            <button class="icon-btn" aria-label="Kapat" onclick="closeCommentPanel()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="username" style="font-size:16px;">Yorumlar</div>
+            <div style="width:38px;"></div>
+        </div>
+        <div class="search-results" id="comment-list" style="padding:0;"></div>
+        <div class="comment-composer">
+            <div class="comment-composer-avatar" id="comment-composer-avatar"></div>
+            <input type="text" id="comment-input" class="comment-input" placeholder="Yorum yaz..." maxlength="300" onkeydown="handleCommentKey(event)">
+            <button type="button" class="comment-send-btn" id="comment-send-btn" onclick="submitComment()"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
     </div>
 
     <div id="admin-panel-overlay" class="overlay-page">
@@ -2139,13 +2422,12 @@
         const cleanUsername = normalizeUsername(username);
         const key = usernameKey(cleanUsername);
         const now = Date.now();
-        const updates = {};
 
-        updates[`users/${authUser.uid}`] = {
-            username: cleanUsername,
-            usernameKey: key,
-            updatedAt: now
-        };
+        // update() kullanıyoruz (set değil) — photoURL gibi mevcut alanlar korunur
+        const updates = {};
+        updates[`users/${authUser.uid}/username`] = cleanUsername;
+        updates[`users/${authUser.uid}/usernameKey`] = key;
+        updates[`users/${authUser.uid}/updatedAt`] = now;
         updates[`usernames/${key}`] = {
             uid: authUser.uid,
             username: cleanUsername,
@@ -2285,6 +2567,7 @@
             listenToReels();
             listenToModerationStatus();
             checkAdminStatus();
+            listenToNotifications();
         } else {
             authScreen.style.display = 'flex';
             mainApp.style.display = 'none';
@@ -3580,6 +3863,14 @@
         likeBtn.onclick = (e) => { e.stopPropagation(); toggleReelLike(item.id, likeBtn); };
         actions.appendChild(likeBtn);
 
+        const commentBtn = document.createElement('button');
+        commentBtn.className = isFull ? 'reel-like-btn' : 'reel-like-btn home-reel-like-btn';
+        commentBtn.type = 'button';
+        commentBtn.innerHTML = `<i class="fa-regular fa-comment"></i><span class="reel-comment-count">0</span>`;
+        commentBtn.onclick = (e) => { e.stopPropagation(); openCommentPanel(item.id, item.uid); };
+        actions.appendChild(commentBtn);
+        listenToReelCommentCount(item.id, commentBtn);
+
         const soundBtn = document.createElement('button');
         soundBtn.className = isFull ? 'reel-like-btn reel-sound-btn' : 'reel-like-btn home-reel-like-btn reel-sound-btn';
         soundBtn.type = 'button';
@@ -3616,14 +3907,289 @@
         reelLikeListeners[reelId] = { ref, handler };
     }
 
+    // ===== Yorum yorum sayısı canlı dinleyici =====
+    const reelCommentListeners = {};
+    function listenToReelCommentCount(reelId, commentBtn) {
+        if (reelCommentListeners[reelId]) {
+            reelCommentListeners[reelId].ref.off('value', reelCommentListeners[reelId].handler);
+        }
+        const ref = database.ref(`reelComments/${reelId}`);
+        const handler = snapshot => {
+            commentBtn.querySelector('.reel-comment-count').textContent = snapshot.numChildren();
+        };
+        ref.on('value', handler);
+        reelCommentListeners[reelId] = { ref, handler };
+    }
+
+    // ===== Yorum paneli =====
+    let activeCommentReelId = null;
+    let activeCommentOwnerUid = null;
+    let commentPanelRef = null;
+
+    function openCommentPanel(reelId, ownerUid) {
+        activeCommentReelId = reelId;
+        activeCommentOwnerUid = ownerUid;
+
+        const list = document.getElementById('comment-list');
+        list.innerHTML = '<div class="search-hint">Yükleniyor...</div>';
+
+        styleAvatarElement(
+            document.getElementById('comment-composer-avatar'),
+            currentPhotoURL, currentUser
+        );
+
+        showOverlay('comment-panel-overlay');
+
+        if (commentPanelRef) commentPanelRef.off('value');
+        commentPanelRef = database.ref(`reelComments/${reelId}`).orderByChild('timestamp');
+        commentPanelRef.on('value', snapshot => {
+            list.innerHTML = '';
+            if (!snapshot.exists()) {
+                list.innerHTML = '<div class="search-hint">Henüz yorum yok. İlk yorumu sen yap!</div>';
+                return;
+            }
+            const rows = [];
+            snapshot.forEach(child => rows.push({ id: child.key, ...child.val() }));
+            rows.forEach(comment => list.appendChild(buildCommentRow(comment)));
+            list.scrollTop = list.scrollHeight;
+        });
+    }
+
+    function closeCommentPanel() {
+        if (commentPanelRef) { commentPanelRef.off('value'); commentPanelRef = null; }
+        activeCommentReelId = null;
+        activeCommentOwnerUid = null;
+        hideOverlay('comment-panel-overlay');
+    }
+
+    function buildCommentRow(comment) {
+        const row = document.createElement('div');
+        row.className = 'comment-row';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'comment-avatar';
+
+        fetchUserProfile(comment.uid || '').then(profile => {
+            styleAvatarElement(avatar, profile.photoURL, comment.username);
+        }).catch(() => {
+            styleAvatarElement(avatar, null, comment.username);
+        });
+
+        const body = document.createElement('div');
+        body.className = 'comment-body';
+
+        const uname = document.createElement('div');
+        uname.className = 'comment-username';
+        uname.textContent = '@' + (comment.username || 'kullanici');
+
+        const text = document.createElement('div');
+        text.className = 'comment-text';
+        text.textContent = comment.text || '';
+
+        const time = document.createElement('div');
+        time.className = 'comment-time';
+        time.textContent = comment.timestamp
+            ? new Date(comment.timestamp).toLocaleString('tr-TR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
+            : '';
+
+        if (isCurrentUserAdmin || comment.uid === currentUid) {
+            const del = document.createElement('button');
+            del.style.cssText = 'background:none;border:0;color:#ed4956;font-size:11px;padding:0;cursor:pointer;margin-top:4px;';
+            del.textContent = 'Sil';
+            del.onclick = () => {
+                if (confirm('Bu yorumu silmek istediğine emin misin?')) {
+                    database.ref(`reelComments/${activeCommentReelId}/${comment.id}`).remove();
+                }
+            };
+            body.appendChild(uname);
+            body.appendChild(text);
+            body.appendChild(time);
+            body.appendChild(del);
+        } else {
+            body.appendChild(uname);
+            body.appendChild(text);
+            body.appendChild(time);
+        }
+
+        row.appendChild(avatar);
+        row.appendChild(body);
+        return row;
+    }
+
+    function handleCommentKey(e) {
+        if (e.key === 'Enter') submitComment();
+    }
+
+    function submitComment() {
+        if (blockedByTimeout()) return;
+        const input = document.getElementById('comment-input');
+        const text = (input.value || '').trim();
+        if (!text || !activeCommentReelId || !currentUid) return;
+
+        const btn = document.getElementById('comment-send-btn');
+        btn.disabled = true;
+
+        const commentData = {
+            uid: currentUid,
+            username: currentUser,
+            text: text,
+            timestamp: Date.now()
+        };
+
+        database.ref(`reelComments/${activeCommentReelId}`).push(commentData)
+            .then(() => {
+                input.value = '';
+                // Bildirim: reel sahibine (kendisi değilse) bildirim gönder
+                if (activeCommentOwnerUid && activeCommentOwnerUid !== currentUid) {
+                    pushNotification(activeCommentOwnerUid, {
+                        type: 'comment',
+                        fromUid: currentUid,
+                        fromUsername: currentUser,
+                        fromPhotoURL: currentPhotoURL || null,
+                        reelId: activeCommentReelId,
+                        text: text,
+                        timestamp: Date.now()
+                    });
+                }
+            })
+            .catch(err => alert("Yorum gönderilemedi: " + (err && err.message ? err.message : "hata")))
+            .finally(() => { btn.disabled = false; });
+    }
+
+    // ===== Bildirim sistemi =====
+    function pushNotification(toUid, data) {
+        database.ref(`notifications/${toUid}`).push(data).catch(() => {});
+    }
+
+    let notifRef = null;
+    let notifUnreadCount = 0;
+
+    function listenToNotifications() {
+        if (!currentUid) return;
+        if (notifRef) notifRef.off('value');
+        notifRef = database.ref(`notifications/${currentUid}`).orderByChild('timestamp').limitToLast(50);
+        notifRef.on('value', snapshot => {
+            const all = [];
+            snapshot.forEach(child => all.push({ id: child.key, ...child.val() }));
+            all.reverse();
+            notifUnreadCount = all.filter(n => !n.read).length;
+            const badge = document.getElementById('notif-badge');
+            if (badge) {
+                badge.style.display = notifUnreadCount > 0 ? 'flex' : 'none';
+                badge.textContent = notifUnreadCount > 9 ? '9+' : (notifUnreadCount || '');
+            }
+        });
+    }
+
+    function openNotifPanel() {
+        const list = document.getElementById('notif-list');
+        list.innerHTML = '<div class="search-hint">Yükleniyor...</div>';
+        showOverlay('notif-panel-overlay');
+
+        database.ref(`notifications/${currentUid}`).orderByChild('timestamp').limitToLast(50)
+            .once('value').then(snapshot => {
+                const all = [];
+                snapshot.forEach(child => all.push({ id: child.key, ...child.val() }));
+                all.reverse();
+                list.innerHTML = '';
+                if (all.length === 0) {
+                    list.innerHTML = '<div class="search-empty">Henüz bildirim yok.</div>';
+                    return;
+                }
+                all.forEach(n => list.appendChild(buildNotifRow(n)));
+            });
+    }
+
+    function closeNotifPanel() {
+        hideOverlay('notif-panel-overlay');
+    }
+
+    function markAllNotifsRead() {
+        database.ref(`notifications/${currentUid}`).once('value').then(snapshot => {
+            const updates = {};
+            snapshot.forEach(child => {
+                if (!child.val().read) updates[`notifications/${currentUid}/${child.key}/read`] = true;
+            });
+            if (Object.keys(updates).length > 0) database.ref().update(updates);
+        });
+    }
+
+    function buildNotifRow(n) {
+        const row = document.createElement('div');
+        row.className = 'notif-row' + (n.read ? '' : ' unread');
+
+        const avatar = document.createElement('div');
+        avatar.className = 'notif-avatar';
+        styleAvatarElement(avatar, n.fromPhotoURL || null, n.fromUsername || '?');
+        if (n.fromUid) {
+            fetchUserProfile(n.fromUid).then(profile => {
+                styleAvatarElement(avatar, profile.photoURL, n.fromUsername);
+            });
+        }
+
+        const textWrap = document.createElement('div');
+        textWrap.className = 'notif-text';
+
+        let msg = '';
+        if (n.type === 'like') {
+            msg = `<strong>@${n.fromUsername}</strong> reels'ini beğendi.`;
+        } else if (n.type === 'comment') {
+            msg = `<strong>@${n.fromUsername}</strong> reels'ine yorum yaptı: "${n.text}"`;
+        } else if (n.type === 'follow') {
+            msg = `<strong>@${n.fromUsername}</strong> seni takip etmeye başladı.`;
+        } else {
+            msg = `<strong>@${n.fromUsername || '?'}</strong> bir şey yaptı.`;
+        }
+        textWrap.innerHTML = msg;
+
+        const time = document.createElement('div');
+        time.className = 'notif-time';
+        time.textContent = n.timestamp
+            ? new Date(n.timestamp).toLocaleString('tr-TR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
+            : '';
+
+        row.appendChild(avatar);
+        row.appendChild(textWrap);
+        row.appendChild(time);
+
+        // Okundu olarak işaretle
+        if (!n.read) {
+            row.onclick = () => {
+                database.ref(`notifications/${currentUid}/${n.id}/read`).set(true).catch(() => {});
+                row.classList.remove('unread');
+            };
+        }
+
+        return row;
+    }
+
     function toggleReelLike(reelId, likeBtn) {
         if (!currentUid) return;
         const ref = database.ref(`reelLikes/${reelId}/${currentUid}`);
         ref.once('value')
-            .then(snapshot => snapshot.exists() ? ref.remove() : ref.set(true))
-            .then(() => {
+            .then(snapshot => {
+                const wasLiked = snapshot.exists();
+                return (wasLiked ? ref.remove() : ref.set(true)).then(() => !wasLiked);
+            })
+            .then(nowLiked => {
                 likeBtn.classList.add('bump');
                 setTimeout(() => likeBtn.classList.remove('bump'), 200);
+                // Bildirim: reel sahibine (beğeni yapıldığında, kaldırıldığında değil)
+                if (nowLiked) {
+                    database.ref(`reels/${reelId}/uid`).once('value').then(s => {
+                        const ownerUid = s.val();
+                        if (ownerUid && ownerUid !== currentUid) {
+                            pushNotification(ownerUid, {
+                                type: 'like',
+                                fromUid: currentUid,
+                                fromUsername: currentUser,
+                                fromPhotoURL: currentPhotoURL || null,
+                                reelId: reelId,
+                                timestamp: Date.now()
+                            });
+                        }
+                    });
+                }
             })
             .catch(err => {
                 console.error("Beğeni hatası:", err);
@@ -3701,26 +4267,30 @@
 
         const file = pendingReelFile;
         const caption = document.getElementById('reel-caption-input').value.trim();
-        const reelId = database.ref('reels').push().key;
         const confirmBtn = document.getElementById('reel-share-confirm-btn');
         const statusEl = document.getElementById('reel-upload-status');
-        const filename = (file.name) || 'reel.mp4';
+        const filename = file.name || 'reel.mp4';
 
         confirmBtn.disabled = true;
         statusEl.textContent = "Yükleniyor, video boyutuna göre biraz sürebilir...";
 
         uploadToFileServer('/upload/reel', 'video', file, filename)
-            .then(url => database.ref(`reels/${reelId}`).set({
-                uid: currentUid,
-                username: currentUser,
-                videoUrl: url,
-                caption: caption,
-                timestamp: Date.now()
-            }))
+            .then(url => {
+                const newReelRef = database.ref('reels').push();
+                return newReelRef.set({
+                    uid: currentUid,
+                    username: currentUser,
+                    videoUrl: url,
+                    caption: caption,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+            })
             .then(() => {
                 pendingReelFile = null;
                 document.getElementById('reel-preview-video').src = "";
                 hideOverlay('reel-share-overlay');
+                statusEl.textContent = "";
+                confirmBtn.disabled = false;
             })
             .catch(err => {
                 console.error("Reels yükleme hatası:", err);
