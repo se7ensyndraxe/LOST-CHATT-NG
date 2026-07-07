@@ -359,88 +359,108 @@
             white-space: nowrap;
         }
 
-        .dm-panel {
-            padding: 12px;
-            border-bottom: 1px solid #262626;
-            background: #050505;
-            flex-shrink: 0;
-        }
-
-        .dm-picker {
-            display: flex;
-            gap: 8px;
-        }
-
-        .dm-picker input {
-            min-width: 0;
+        /* ===== DM Inbox (Instagram tarzı) ===== */
+        .dm-inbox {
             flex: 1;
-            background: #161616;
-            border: 1px solid #303030;
-            color: #fff;
-            padding: 11px 14px;
-            border-radius: 10px;
-            outline: none;
-            font-size: 14px;
+            min-height: 0;
+            overflow-y: auto;
         }
 
-        .dm-picker input:focus {
-            border-color: #666;
+        .dm-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 40px 24px;
+            text-align: center;
+            color: #fff;
         }
 
-        .dm-picker button {
-            border: 0;
-            border-radius: 10px;
-            background: #0095f6;
-            color: #fff;
-            font-weight: 700;
-            padding: 0 16px;
+        .dm-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
             cursor: pointer;
+            transition: background 0.15s;
+            position: relative;
+        }
+
+        .dm-row:hover { background: #0a0a0a; }
+        .dm-row:active { background: #111; }
+
+        .dm-row-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
             flex-shrink: 0;
+            font-size: 22px;
+            position: relative;
         }
 
-        .conversation-list {
-            display: none;
-            gap: 8px;
-            overflow-x: auto;
-            margin-top: 10px;
-            padding-bottom: 2px;
+        .dm-row-info {
+            flex: 1;
+            min-width: 0;
         }
 
-        .conversation-pill {
-            border: 1px solid #2a2a2a;
-            background: #111;
-            color: #ccc;
-            border-radius: 999px;
-            padding: 8px 14px;
-            cursor: pointer;
+        .dm-row-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        .dm-row-preview {
+            font-size: 13px;
+            color: #888;
             white-space: nowrap;
-            max-width: 170px;
             overflow: hidden;
             text-overflow: ellipsis;
-            flex-shrink: 0;
-            font-size: 13px;
-            transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.15s;
         }
 
-        .conversation-pill:hover {
-            background: #1a1a1a;
-            border-color: #404040;
-        }
-
-        .conversation-pill:active {
-            transform: scale(0.95);
-        }
-
-        .conversation-pill.active {
-            border-color: #0095f6;
-            background: rgba(0, 149, 246, 0.12);
-            color: #4db5ff;
+        .dm-row.unread .dm-row-preview {
+            color: #ddd;
             font-weight: 600;
+        }
+
+        .dm-row-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .dm-row-time {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .dm-unread-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #0095f6;
+        }
+
+        .dm-chat-header-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .dm-chat-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            font-size: 14px;
         }
 
         .chat-status {
             min-height: 18px;
-            margin-top: 10px;
             color: #a8a8a8;
             font-size: 13px;
         }
@@ -1567,12 +1587,13 @@
 
         .reel-side-actions {
             position: absolute;
-            right: 10px;
-            bottom: 90px;
+            right: 12px;
+            bottom: 100px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 18px;
+            gap: 20px;
+            z-index: 5;
         }
 
         .reel-like-btn {
@@ -2002,13 +2023,33 @@
     </div>
 
     <div id="chat-page" class="page">
-        <div class="header chat-header" style="position: relative;">
-            <button class="icon-btn" aria-label="Geri" onclick="switchTab('home')">
+        <div class="header" style="position: relative;">
+            <div class="username" style="font-size:18px;" id="dm-header-title">Mesajlar</div>
+            <button class="icon-btn" aria-label="Yeni mesaj" onclick="openNewDmSearch()">
+                <i class="fa-regular fa-pen-to-square"></i>
+            </button>
+        </div>
+        <div class="dm-inbox" id="dm-inbox">
+            <div class="dm-empty" id="dm-empty">
+                <i class="fa-regular fa-paper-plane" style="font-size:48px;color:#333;"></i>
+                <div style="margin-top:16px;font-weight:700;font-size:18px;">Mesajların</div>
+                <div style="color:#777;font-size:14px;margin-top:6px;">Sağ üstteki kalem simgesine basarak mesaj gönder.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DM konuşma görünümü (overlay) -->
+    <div id="dm-chat-overlay" class="overlay-page">
+        <div class="header chat-header" style="position:relative;">
+            <button class="icon-btn" aria-label="Geri" onclick="closeDmChat()">
                 <i class="fa-solid fa-arrow-left"></i>
             </button>
-            <div class="chat-title-wrap">
-                <div class="username" id="chat-title" style="font-size: 16px;">Mesajlar</div>
-                <div class="chat-recipient" id="chat-recipient"></div>
+            <div class="dm-chat-header-info">
+                <div class="dm-chat-avatar" id="dm-chat-avatar"></div>
+                <div>
+                    <div class="username" id="dm-chat-title" style="font-size:15px;"></div>
+                    <div id="chat-status-overlay" style="font-size:11px;color:#777;"></div>
+                </div>
             </div>
             <button class="icon-btn" aria-label="Sohbet menüsü" onclick="toggleChatMenu(event)">
                 <i class="fa-solid fa-ellipsis-vertical"></i>
@@ -2019,27 +2060,38 @@
                 </button>
             </div>
         </div>
-
-        <div class="dm-panel">
-            <div class="dm-picker">
-                <input type="text" id="recipient-input" placeholder="Kullanıcı adı" autocomplete="off" onkeydown="handleRecipientKeyPress(event)">
-                <button onclick="openConversationByUsername()">Aç</button>
-            </div>
-            <div class="conversation-list" id="conversation-list"></div>
-            <div id="chat-status" class="chat-status">Kullanıcı adı yazarak özel sohbet aç.</div>
-        </div>
-
         <div class="chat-container">
             <div class="chat-messages" id="chat-box">
                 <div class="love-hearts-layer" id="love-hearts-layer"></div>
-                <div class="empty-chat">Bir konuşma seçildiğinde mesajlar burada görünecek.</div>
+                <div class="empty-chat">Mesajlaşmaya başla!</div>
             </div>
             <div class="emoji-panel" id="emoji-panel"></div>
             <div class="chat-input-area">
-                <button type="button" id="emoji-toggle-btn" class="emoji-toggle-btn" aria-label="Emoji" onclick="toggleEmojiPanel()"><i class="fa-regular fa-face-smile"></i></button>
+                <button type="button" id="emoji-toggle-btn" class="emoji-toggle-btn" aria-label="Emoji" onclick="toggleEmojiPanel()">
+                    <i class="fa-regular fa-face-smile"></i>
+                </button>
                 <input type="text" id="message-input" placeholder="Mesaj gönder..." onkeydown="handleKeyPress(event)" disabled>
-                <button id="send-button" onclick="sendMessage()" disabled>Gönder</button>
+                <button id="send-button" onclick="sendMessage()" disabled>
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Yeni DM arama -->
+    <div id="new-dm-overlay" class="overlay-page">
+        <div class="header">
+            <button class="icon-btn" aria-label="Kapat" onclick="closeNewDmSearch()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="username" style="font-size:16px;">Yeni Mesaj</div>
+            <div style="width:38px;"></div>
+        </div>
+        <div class="search-panel">
+            <input type="text" id="dm-search-input" class="search-input" placeholder="Kullanıcı ara..." autocomplete="off" oninput="handleDmSearch()">
+        </div>
+        <div class="search-results" id="dm-search-results">
+            <div class="search-hint">Mesaj göndermek istediğin kullanıcıyı ara.</div>
         </div>
     </div>
 
@@ -2775,66 +2827,15 @@
         return [uidA, uidB].sort().join("_");
     }
 
-    function setChatStatus(message, isError = false) {
-        const status = document.getElementById('chat-status');
-        status.innerText = message;
-        status.classList.toggle('error', isError);
+    function setChatStatus(message, isError) {
+        const el = document.getElementById('chat-status-overlay');
+        if (el) { el.textContent = message || ''; }
     }
 
     function setComposerEnabled(enabled) {
         document.getElementById('message-input').disabled = !enabled;
         document.getElementById('send-button').disabled = !enabled;
         if (!enabled) document.getElementById('emoji-panel').classList.remove('active');
-    }
-
-    function handleRecipientKeyPress(e) {
-        if (e.key === 'Enter') {
-            openConversationByUsername();
-        }
-    }
-
-    function openConversationByUsername() {
-        const input = document.getElementById('recipient-input');
-        const targetUsername = normalizeUsername(input.value);
-
-        if (!currentUid) {
-            setChatStatus("Önce giriş yapmalısın.", true);
-            return;
-        }
-
-        if (!isValidUsername(targetUsername)) {
-            setChatStatus("Geçerli bir kullanıcı adı yaz.", true);
-            return;
-        }
-
-        if (targetUsername === currentUser) {
-            setChatStatus("Kendinle sohbet açamazsın.", true);
-            return;
-        }
-
-        setChatStatus("Kullanıcı aranıyor...");
-
-        database.ref(`usernames/${usernameKey(targetUsername)}`).once('value')
-            .then(snapshot => {
-                if (!snapshot.exists()) {
-                    throw new Error("not-found");
-                }
-
-                const userData = snapshot.val();
-                if (!userData.uid) {
-                    throw new Error("not-found");
-                }
-
-                input.value = "";
-                return startConversation(userData.uid, userData.username || targetUsername);
-            })
-            .catch(error => {
-                if (error.message === "not-found") {
-                    setChatStatus("Bu kullanıcı bulunamadı. Karşı tarafın bir kez giriş yapmış olması gerekebilir.", true);
-                } else {
-                    setChatStatus("Sohbet açılamadı. Firebase izinlerini kontrol et.", true);
-                }
-            });
     }
 
     function startConversation(recipientUid, recipientUsername) {
@@ -2856,19 +2857,91 @@
 
         return database.ref().update(updates).then(() => {
             activeConversationId = conversationId;
-            activeRecipient = {
-                uid: recipientUid,
-                username: cleanRecipient
-            };
+            activeRecipient = { uid: recipientUid, username: cleanRecipient };
 
-            document.getElementById('chat-title').innerText = "Mesajlar";
-            document.getElementById('chat-recipient').innerText = "@" + cleanRecipient;
+            // DM chat overlay'i aç
+            const titleEl = document.getElementById('dm-chat-title');
+            if (titleEl) titleEl.textContent = '@' + cleanRecipient;
+
+            const avatarEl = document.getElementById('dm-chat-avatar');
+            if (avatarEl) {
+                styleAvatarElement(avatarEl, null, cleanRecipient);
+                fetchUserProfile(recipientUid).then(profile => {
+                    styleAvatarElement(avatarEl, profile.photoURL, cleanRecipient);
+                });
+            }
+
             setComposerEnabled(true);
-            setChatStatus("@" + cleanRecipient + " ile özel sohbet");
-            highlightActiveConversation();
+            applyChatTheme();
             listenToMessages(conversationId);
-            switchTab('chat');
+            closeNewDmSearch();
+            showOverlay('dm-chat-overlay');
+            scrollToBottom();
         });
+    }
+
+    function closeDmChat() {
+        detachChatListener();
+        setComposerEnabled(false);
+        activeConversationId = null;
+        activeRecipient = null;
+        hideOverlay('dm-chat-overlay');
+    }
+
+    function openNewDmSearch() {
+        document.getElementById('dm-search-input').value = '';
+        document.getElementById('dm-search-results').innerHTML = '<div class="search-hint">Mesaj göndermek istediğin kullanıcıyı ara.</div>';
+        showOverlay('new-dm-overlay');
+        setTimeout(() => document.getElementById('dm-search-input').focus(), 200);
+    }
+
+    function closeNewDmSearch() {
+        hideOverlay('new-dm-overlay');
+    }
+
+    let dmSearchTimer = null;
+    function handleDmSearch() {
+        clearTimeout(dmSearchTimer);
+        const query = normalizeUsername(document.getElementById('dm-search-input').value);
+        const resultsBox = document.getElementById('dm-search-results');
+        if (!query) {
+            resultsBox.innerHTML = '<div class="search-hint">Mesaj göndermek istediğin kullanıcıyı ara.</div>';
+            return;
+        }
+        resultsBox.innerHTML = '<div class="search-hint">Aranıyor...</div>';
+        dmSearchTimer = setTimeout(() => {
+            database.ref('usernames')
+                .orderByChild('username')
+                .startAt(query)
+                .endAt(query + '\uf8ff')
+                .limitToFirst(20)
+                .once('value')
+                .then(snapshot => {
+                    const uids = [];
+                    const val = snapshot.val();
+                    if (val) Object.keys(val).forEach(key => { const d = val[key]; if (d && d.uid) uids.push(d.uid); });
+                    if (uids.length === 0) { resultsBox.innerHTML = '<div class="search-empty">Kullanıcı bulunamadı.</div>'; return; }
+                    resultsBox.innerHTML = '';
+                    Promise.all(uids.map(id => fetchUserProfile(id))).then(profiles => {
+                        profiles.forEach(profile => {
+                            const row = buildUserRow(profile);
+                            // Takip et butonunu mesaj butonu ile değiştir
+                            const followBtn = row.querySelector('.row-follow-btn');
+                            if (followBtn) {
+                                followBtn.textContent = 'Mesaj';
+                                followBtn.style.background = '#262626';
+                                followBtn.style.borderColor = '#444';
+                                followBtn.onclick = (e) => {
+                                    e.stopPropagation();
+                                    startConversation(profile.uid, profile.username);
+                                };
+                            }
+                            row.onclick = () => startConversation(profile.uid, profile.username);
+                            resultsBox.appendChild(row);
+                        });
+                    });
+                });
+        }, 300);
     }
 
     function detachChatListener() {
@@ -3036,52 +3109,94 @@
 
     function listenToConversationList() {
         if (!currentUid) return;
-
         detachConversationList();
+
         conversationListRef = database.ref(`userConversations/${currentUid}`);
         conversationListHandler = snapshot => {
-            const list = document.getElementById('conversation-list');
-            list.innerHTML = "";
+            const inbox = document.getElementById('dm-inbox');
+            const emptyEl = document.getElementById('dm-empty');
+            inbox.innerHTML = '';
 
-            if (!snapshot.exists()) {
-                list.style.display = "none";
+            const conversations = [];
+            const val = snapshot.val();
+            if (val) {
+                Object.keys(val).forEach(key => conversations.push({ id: key, ...val[key] }));
+            }
+
+            conversations.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+            if (conversations.length === 0) {
+                inbox.appendChild(emptyEl);
                 return;
             }
 
-            const conversations = [];
-            snapshot.forEach(child => {
-                conversations.push({
-                    id: child.key,
-                    ...child.val()
-                });
+            conversations.forEach(item => {
+                if (!item.withUid || !item.withUsername) return;
+                inbox.appendChild(buildDmRow(item));
             });
-
-            conversations
-                .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
-                .slice(0, 12)
-                .forEach(item => {
-                    if (!item.withUid || !item.withUsername) return;
-
-                    const button = document.createElement('button');
-                    button.className = 'conversation-pill';
-                    button.type = 'button';
-                    button.dataset.conversationId = item.id;
-                    button.textContent = "@" + item.withUsername;
-                    button.onclick = () => startConversation(item.withUid, item.withUsername);
-                    list.appendChild(button);
-                });
-
-            list.style.display = list.children.length ? "flex" : "none";
-            highlightActiveConversation();
         };
 
         conversationListRef.on('value', conversationListHandler);
     }
 
-    function highlightActiveConversation() {
-        document.querySelectorAll('.conversation-pill').forEach(button => {
-            button.classList.toggle('active', button.dataset.conversationId === activeConversationId);
+    function buildDmRow(item) {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'dm-row';
+        row.dataset.conversationId = item.id;
+
+        const avatar = document.createElement('div');
+        avatar.className = 'dm-row-avatar';
+        styleAvatarElement(avatar, null, item.withUsername);
+        fetchUserProfile(item.withUid).then(profile => {
+            styleAvatarElement(avatar, profile.photoURL, item.withUsername);
         });
+
+        const info = document.createElement('div');
+        info.className = 'dm-row-info';
+
+        const name = document.createElement('div');
+        name.className = 'dm-row-name';
+        name.textContent = '@' + item.withUsername;
+
+        const preview = document.createElement('div');
+        preview.className = 'dm-row-preview';
+
+        // Son mesajı Firebase'den çek
+        database.ref(`conversations/${item.id}/messages`).orderByChild('timestamp').limitToLast(1)
+            .once('value').then(snap => {
+                snap.forEach(child => {
+                    const msg = child.val();
+                    const isMe = msg.senderUid === currentUid;
+                    preview.textContent = (isMe ? 'Sen: ' : '') + (msg.text || '');
+                });
+            });
+
+        info.appendChild(name);
+        info.appendChild(preview);
+
+        const meta = document.createElement('div');
+        meta.className = 'dm-row-meta';
+
+        const time = document.createElement('div');
+        time.className = 'dm-row-time';
+        if (item.updatedAt) {
+            const d = new Date(item.updatedAt);
+            const now = new Date();
+            if (d.toDateString() === now.toDateString()) {
+                time.textContent = d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+            } else {
+                time.textContent = d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' });
+            }
+        }
+        meta.appendChild(time);
+
+        row.appendChild(avatar);
+        row.appendChild(info);
+        row.appendChild(meta);
+
+        row.onclick = () => startConversation(item.withUid, item.withUsername);
+        return row;
     }
 
     // ===== Takip sistemi (followers / following) =====
