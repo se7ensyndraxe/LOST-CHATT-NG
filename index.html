@@ -26,6 +26,72 @@
             overflow: hidden;
         }
 
+        body.light-mode {
+            background-color: #f7f7f7;
+            color: #111;
+        }
+
+        body.light-mode .app-container {
+            background-color: #f7f7f7;
+            border-color: #e6e6e6;
+        }
+
+        body.light-mode .header,
+        body.light-mode .overlay-page,
+        body.light-mode .profile-menu,
+        body.light-mode .search-panel,
+        body.light-mode .chat-input-area,
+        body.light-mode .bottom-nav,
+        body.light-mode .profile-header,
+        body.light-mode .story-viewer-header,
+        body.light-mode .notification-card,
+        body.light-mode .follow-request-row,
+        body.light-mode .settings-panel {
+            background: rgba(255,255,255,0.95);
+            color: #111;
+            border-color: #e6e6e6;
+        }
+
+        body.light-mode .page {
+            background: #f7f7f7;
+            color: #111;
+        }
+
+        body.light-mode .profile-avatar-inner,
+        body.light-mode .row-avatar,
+        body.light-mode .search-input,
+        body.light-mode .comment-input,
+        body.light-mode .settings-panel textarea,
+        body.light-mode .settings-panel input {
+            background: #fff;
+            color: #111;
+            border-color: #dcdcdc;
+        }
+
+        body.light-mode .icon-btn,
+        body.light-mode .nav-item,
+        body.light-mode .chat-input-area button,
+        body.light-mode .follow-request-actions button,
+        body.light-mode .settings-save-btn,
+        body.light-mode .settings-toggle-btn {
+            color: #111;
+        }
+
+        body.light-mode .message.sent {
+            background: linear-gradient(135deg, #3797f0 0%, #53a8ff 100%);
+            color: #fff;
+        }
+
+        body.light-mode .message.received {
+            background: #f1f3f5;
+            color: #111;
+            border-color: #d9d9d9;
+        }
+
+        body.light-mode .chat-messages {
+            background: #ffffff;
+        }
+
         button, input {
             font: inherit;
         }
@@ -2401,6 +2467,12 @@
                 <button type="button" class="profile-menu-item" onclick="logoutUser()">
                     <i class="fa-solid fa-right-from-bracket"></i> Çıkış Yap
                 </button>
+                <button type="button" class="profile-menu-item" onclick="openFollowRequests()">
+                    <i class="fa-solid fa-user-plus"></i> Takip İstekleri <span id="follow-request-count" class="request-count-badge"></span>
+                </button>
+                <button type="button" class="profile-menu-item" onclick="openProfileSettings()">
+                    <i class="fa-solid fa-gear"></i> Ayarlar
+                </button>
                 <button type="button" class="profile-menu-item danger" onclick="promptDeleteOwnAccount()">
                     <i class="fa-solid fa-trash"></i> Hesabımı Sil
                 </button>
@@ -2413,9 +2485,11 @@
             </div>
             <div class="profile-info" style="flex: 1; min-width: 0;">
                 <h2 id="profile-display-name">Kullanıcı</h2>
+                <p id="profile-bio" class="profile-bio">Biyografiniz burada görünecek.</p>
                 <div class="profile-stats">
                     <button type="button" onclick="openListModal('following')"><strong id="stat-following">0</strong><span>Takip Edilen</span></button>
                     <button type="button" onclick="openListModal('followers')"><strong id="stat-followers">0</strong><span>Takipçi</span></button>
+                    <button type="button"><strong id="stat-posts">0</strong><span>Gönderi</span></button>
                 </div>
             </div>
         </div>
@@ -2436,6 +2510,7 @@
             </div>
             <div class="profile-info" style="flex: 1; min-width: 0;">
                 <h2 id="view-display-name">Kullanıcı</h2>
+                <p id="view-bio" class="profile-bio">Biyografi bilgisi burada gösterilecek.</p>
                 <div class="profile-stats">
                     <button type="button" id="view-following-btn"><strong id="view-stat-following">0</strong><span>Takip Edilen</span></button>
                     <button type="button" id="view-followers-btn"><strong id="view-stat-followers">0</strong><span>Takipçi</span></button>
@@ -2445,6 +2520,44 @@
         <div class="follow-action-row">
             <button class="follow-btn-main" id="view-follow-btn" onclick="toggleFollowViewed()">Takip Et</button>
             <button class="message-btn-main" onclick="messageViewed()">Mesaj Gönder</button>
+        </div>
+        <div id="view-private-warning" class="profile-private-warning" style="display:none;">
+            <i class="fa-solid fa-lock"></i> Bu hesap gizli. Takip isteğin onaylanmadan reels ve hikayelerini göremezsin.
+        </div>
+    </div>
+
+    <div id="profile-settings-overlay" class="overlay-page">
+        <div class="header">
+            <button class="icon-btn" aria-label="Geri" onclick="closeProfileSettings()"><i class="fa-solid fa-arrow-left"></i></button>
+            <div class="username" style="font-size: 16px;">Profil Ayarları</div>
+            <div style="width: 38px;"></div>
+        </div>
+        <div class="settings-panel" id="profile-settings-panel">
+            <label>
+                Biyografi
+                <textarea id="settings-bio" maxlength="200" placeholder="Biyografinizi yazın..."></textarea>
+            </label>
+            <div class="settings-toggle-row">
+                <span>Gizli Hesap</span>
+                <button type="button" id="settings-privacy-toggle" class="settings-toggle-btn" onclick="togglePrivacy()">Kapalı</button>
+            </div>
+            <div class="settings-toggle-row">
+                <span>Koyu/Açık Mod</span>
+                <button type="button" id="settings-theme-toggle" class="settings-toggle-btn" onclick="toggleAppTheme()">Açık</button>
+            </div>
+            <button type="button" class="settings-save-btn" onclick="saveProfileSettings()">Kaydet</button>
+            <div class="settings-status" id="settings-save-status"></div>
+        </div>
+    </div>
+
+    <div id="follow-requests-overlay" class="overlay-page">
+        <div class="header">
+            <button class="icon-btn" aria-label="Geri" onclick="closeFollowRequests()"><i class="fa-solid fa-arrow-left"></i></button>
+            <div class="username" style="font-size: 16px;">Takip İstekleri</div>
+            <div style="width: 38px;"></div>
+        </div>
+        <div class="search-results" id="follow-requests-list">
+            <div class="search-hint">Takip istekleri yükleniyor...</div>
         </div>
     </div>
 
@@ -2621,6 +2734,7 @@
     let currentUser = null;
     let currentUid = null;
     let currentPhotoURL = null;
+    let currentAppTheme = localStorage.getItem('lc_app_theme') || 'light';
     let activeConversationId = null;
     let activeRecipient = null;
     let activeMessagesRef = null;
@@ -2631,6 +2745,9 @@
     let typingTimeout = null;
     let conversationListRef = null;
     let conversationListHandler = null;
+    let followRequestsRef = null;
+    let currentFollowRequestCount = 0;
+    const profileSettingsState = { isPrivate: false };
 
     // Profil / takip sistemi
     const userProfileCache = {};
@@ -2711,7 +2828,9 @@
             const profile = {
                 uid: uid,
                 username: data.username || "kullanici",
-                photoURL: data.photoURL || null
+                photoURL: data.photoURL || null,
+                bio: data.bio || "",
+                isPrivate: data.isPrivate === true
             };
             userProfileCache[uid] = profile;
             return profile;
@@ -2935,10 +3054,14 @@
             fetchUserProfile(currentUid).then(profile => {
                 currentPhotoURL = profile.photoURL;
                 styleAvatarElement(document.getElementById('own-avatar-inner'), profile.photoURL, currentUser);
+                document.getElementById('profile-bio').textContent = profile.bio || 'Biyografiniz burada görünecek.';
+                applyAppTheme(currentAppTheme);
+                loadProfileSettings(profile);
             });
 
             listenToConversationList();
             listenToOwnFollowStats();
+            listenToFollowRequests();
             listenToStories();
             listenToStorySeen();
             listenToReels();
@@ -3078,6 +3201,212 @@
             menu.classList.remove('active');
         }
     });
+
+    function applyAppTheme(theme) {
+        currentAppTheme = theme || currentAppTheme || 'light';
+        document.body.classList.toggle('light-mode', currentAppTheme === 'light');
+        localStorage.setItem('lc_app_theme', currentAppTheme);
+        setThemeToggleButton();
+    }
+
+    function setThemeToggleButton() {
+        const btn = document.getElementById('settings-theme-toggle');
+        if (!btn) return;
+        btn.textContent = currentAppTheme === 'light' ? 'Açık Mod' : 'Karanlık Mod';
+        btn.classList.toggle('active', currentAppTheme === 'dark');
+    }
+
+    function loadProfileSettings(profile) {
+        if (!profile) return;
+        const bioInput = document.getElementById('settings-bio');
+        const privacyBtn = document.getElementById('settings-privacy-toggle');
+        if (bioInput) bioInput.value = profile.bio || '';
+        if (privacyBtn) {
+            privacyBtn.textContent = profile.isPrivate ? 'Gizli Hesap' : 'Herkese Açık';
+            privacyBtn.classList.toggle('active', profile.isPrivate);
+        }
+        profileSettingsState.isPrivate = profile.isPrivate;
+        document.getElementById('settings-save-status').textContent = '';
+    }
+
+    function openProfileSettings() {
+        const menu = document.getElementById('profile-menu');
+        if (menu) menu.classList.remove('active');
+        if (!currentUid) return;
+        fetchUserProfile(currentUid).then(profile => {
+            loadProfileSettings(profile);
+            showOverlay('profile-settings-overlay');
+        });
+    }
+
+    function closeProfileSettings() {
+        hideOverlay('profile-settings-overlay');
+    }
+
+    function togglePrivacy() {
+        profileSettingsState.isPrivate = !profileSettingsState.isPrivate;
+        const btn = document.getElementById('settings-privacy-toggle');
+        if (!btn) return;
+        btn.textContent = profileSettingsState.isPrivate ? 'Gizli Hesap' : 'Herkese Açık';
+        btn.classList.toggle('active', profileSettingsState.isPrivate);
+    }
+
+    function toggleAppTheme() {
+        applyAppTheme(currentAppTheme === 'light' ? 'dark' : 'light');
+    }
+
+    function saveProfileSettings() {
+        if (!currentUid) return;
+        const bioInput = document.getElementById('settings-bio');
+        const statusEl = document.getElementById('settings-save-status');
+        const bio = bioInput ? bioInput.value.trim() : '';
+        const updates = {
+            bio: bio,
+            isPrivate: profileSettingsState.isPrivate
+        };
+        database.ref(`users/${currentUid}`).update(updates)
+            .then(() => {
+                invalidateUserProfileCache(currentUid);
+                document.getElementById('profile-bio').textContent = bio || 'Biyografiniz burada görünecek.';
+                if (document.getElementById('view-bio')) {
+                    document.getElementById('view-bio').textContent = bio || 'Biyografi bilgisi burada gösterilecek.';
+                }
+                if (statusEl) statusEl.textContent = 'Kaydedildi.';
+            })
+            .catch(() => {
+                if (statusEl) statusEl.textContent = 'Kaydetme başarısız oldu.';
+            });
+    }
+
+    function listenToFollowRequests() {
+        if (!currentUid) return;
+        if (followRequestsRef) followRequestsRef.off('value');
+        followRequestsRef = database.ref(`followRequests/${currentUid}`);
+        followRequestsRef.on('value', snapshot => {
+            currentFollowRequestCount = snapshot.numChildren();
+            const badge = document.getElementById('follow-request-count');
+            if (!badge) return;
+            if (currentFollowRequestCount > 0) {
+                badge.textContent = currentFollowRequestCount;
+                badge.style.display = 'inline-flex';
+            } else {
+                badge.textContent = '';
+                badge.style.display = 'none';
+            }
+        });
+    }
+
+    function openFollowRequests() {
+        const menu = document.getElementById('profile-menu');
+        if (menu) menu.classList.remove('active');
+        if (!currentUid) return;
+        const listBox = document.getElementById('follow-requests-list');
+        if (!listBox) return;
+        listBox.innerHTML = `<div class="search-hint">Takip istekleri yükleniyor...</div>`;
+        showOverlay('follow-requests-overlay');
+        database.ref(`followRequests/${currentUid}`).once('value')
+            .then(snapshot => {
+                const requests = snapshot.val() || {};
+                const requesterUids = Object.keys(requests).filter(uid => requests[uid] === true);
+                if (requesterUids.length === 0) {
+                    listBox.innerHTML = `<div class="follow-request-empty">Henüz takip isteği yok.</div>`;
+                    return;
+                }
+                listBox.innerHTML = '';
+                requesterUids.forEach(uid => {
+                    fetchUserProfile(uid).then(profile => {
+                        listBox.appendChild(buildFollowRequestRow(profile));
+                    });
+                });
+            })
+            .catch(() => {
+                listBox.innerHTML = `<div class="follow-request-empty">İstekler yüklenemedi.</div>`;
+            });
+    }
+
+    function closeFollowRequests() {
+        hideOverlay('follow-requests-overlay');
+    }
+
+    function buildFollowRequestRow(profile) {
+        const row = document.createElement('div');
+        row.className = 'follow-request-row';
+
+        const info = document.createElement('div');
+        info.className = 'follow-request-info';
+        const avatar = document.createElement('div');
+        avatar.className = 'row-avatar';
+        styleAvatarElement(avatar, profile.photoURL, profile.username);
+        const name = document.createElement('div');
+        name.className = 'follow-request-name';
+        name.textContent = '@' + profile.username;
+        info.appendChild(avatar);
+        info.appendChild(name);
+
+        const actions = document.createElement('div');
+        actions.className = 'follow-request-actions';
+        const acceptBtn = document.createElement('button');
+        acceptBtn.className = 'accept';
+        acceptBtn.type = 'button';
+        acceptBtn.textContent = 'Onayla';
+        acceptBtn.onclick = (e) => {
+            e.stopPropagation();
+            acceptFollowRequest(profile.uid);
+        };
+
+        const rejectBtn = document.createElement('button');
+        rejectBtn.className = 'reject';
+        rejectBtn.type = 'button';
+        rejectBtn.textContent = 'Reddet';
+        rejectBtn.onclick = (e) => {
+            e.stopPropagation();
+            rejectFollowRequest(profile.uid);
+        };
+
+        actions.appendChild(acceptBtn);
+        actions.appendChild(rejectBtn);
+        row.appendChild(info);
+        row.appendChild(actions);
+        return row;
+    }
+
+    function acceptFollowRequest(requesterUid) {
+        if (!currentUid || !requesterUid) return;
+        const updates = {};
+        updates[`followers/${currentUid}/${requesterUid}`] = true;
+        updates[`following/${requesterUid}/${currentUid}`] = true;
+        updates[`followRequests/${currentUid}/${requesterUid}`] = null;
+        database.ref().update(updates)
+            .then(() => {
+                listenToFollowRequests();
+                openFollowRequests();
+                refreshViewedStats(currentUid);
+            });
+    }
+
+    function rejectFollowRequest(requesterUid) {
+        if (!currentUid || !requesterUid) return;
+        database.ref(`followRequests/${currentUid}/${requesterUid}`).set(null)
+            .then(() => {
+                listenToFollowRequests();
+                openFollowRequests();
+            });
+    }
+
+    function hasFollowRequest(targetUid) {
+        if (!currentUid || !targetUid) return Promise.resolve(false);
+        return database.ref(`followRequests/${targetUid}/${currentUid}`).once('value').then(snapshot => snapshot.exists());
+    }
+
+    function sendFollowRequest(targetUid) {
+        if (!currentUid || !targetUid) return Promise.resolve();
+        return database.ref(`followRequests/${targetUid}/${currentUid}`).set(true);
+    }
+
+    function cancelFollowRequest(targetUid) {
+        if (!currentUid || !targetUid) return Promise.resolve();
+        return database.ref(`followRequests/${targetUid}/${currentUid}`).set(null);
+    }
 
     // ===== Sohbet menüsü (üç nokta) ve tema seçimi =====
     function toggleChatMenu(event) {
@@ -3776,15 +4105,41 @@
 
     function updateFollowButtonState(targetUid) {
         const btn = document.getElementById('view-follow-btn');
-        isFollowingUser(targetUid).then(following => {
-            btn.textContent = following ? "Takip Ediliyor" : "Takip Et";
-            btn.classList.toggle('following', following);
-        });
+        if (!btn || !targetUid) return;
+
+        Promise.all([fetchUserProfile(targetUid), isFollowingUser(targetUid), hasFollowRequest(targetUid)])
+            .then(([profile, following, requested]) => {
+                btn.classList.toggle('following', following);
+                if (profile.isPrivate && !following) {
+                    if (requested) {
+                        btn.textContent = 'İstek Gönderildi';
+                    } else {
+                        btn.textContent = 'Takip İsteği Gönder';
+                    }
+                } else {
+                    btn.textContent = following ? 'Takip Ediliyor' : 'Takip Et';
+                }
+            });
     }
 
     function toggleFollowViewed() {
         if (!viewedUid) return;
-        toggleFollow(viewedUid).then(() => {
+        fetchUserProfile(viewedUid).then(profile => {
+            if (profile.isPrivate) {
+                return isFollowingUser(viewedUid).then(following => {
+                    if (following) {
+                        return toggleFollow(viewedUid);
+                    }
+                    return hasFollowRequest(viewedUid).then(requested => {
+                        if (requested) {
+                            return cancelFollowRequest(viewedUid);
+                        }
+                        return sendFollowRequest(viewedUid);
+                    });
+                });
+            }
+            return toggleFollow(viewedUid);
+        }).then(() => {
             updateFollowButtonState(viewedUid);
             refreshViewedStats(viewedUid);
         });
@@ -3838,12 +4193,33 @@
         document.getElementById('view-followers-btn').onclick = () => openListModal('followers', uid);
         styleAvatarElement(document.getElementById('view-avatar-inner'), null, username);
 
-        fetchUserProfile(uid).then(profile => {
-            styleAvatarElement(document.getElementById('view-avatar-inner'), profile.photoURL, username);
-        });
+        Promise.all([fetchUserProfile(uid), isFollowingUser(uid), hasFollowRequest(uid)])
+            .then(([profile, following, requested]) => {
+                styleAvatarElement(document.getElementById('view-avatar-inner'), profile.photoURL, username);
+                const viewBio = document.getElementById('view-bio');
+                if (viewBio) {
+                    viewBio.textContent = profile.bio || 'Biyografi bilgisi burada gösterilecek.';
+                }
+                const warning = document.getElementById('view-private-warning');
+                const isPrivateAndBlocked = profile.isPrivate && !following;
+                if (warning) {
+                    warning.style.display = isPrivateAndBlocked ? 'flex' : 'none';
+                }
+                const btn = document.getElementById('view-follow-btn');
+                if (btn) {
+                    btn.classList.toggle('following', following);
+                    if (profile.isPrivate && !following) {
+                        btn.textContent = requested ? 'İstek Gönderildi' : 'Takip İsteği Gönder';
+                    } else {
+                        btn.textContent = following ? 'Takip Ediliyor' : 'Takip Et';
+                    }
+                }
+            })
+            .catch(() => {
+                // profile yüklenemezse varsayılan metinle devam et
+            });
 
         refreshViewedStats(uid);
-        updateFollowButtonState(uid);
         showOverlay('profile-view-overlay');
     }
 
@@ -4327,6 +4703,7 @@
         items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         const limited = items.slice(0, 50);
         allReelsItems = limited;
+        updateOwnPostCounter();
 
         renderReelsTab();
         renderHomeReels();
@@ -4434,6 +4811,12 @@
         }
 
         ownItems.forEach(item => grid.appendChild(buildExploreCell(item, { allowOwnDelete: true })));
+    }
+
+    function updateOwnPostCounter() {
+        const ownCount = currentUid ? allReelsItems.filter(item => item.uid === currentUid).length : 0;
+        const stat = document.getElementById('stat-posts');
+        if (stat) stat.textContent = ownCount;
     }
 
     function deleteOwnReel(reelId) {
