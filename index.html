@@ -2577,6 +2577,7 @@
     let activeRecipient = null;
     let activeMessagesRef = null;
     let activeMessageHandler = null;
+    let activeMessageChangeHandler = null;
     let conversationListRef = null;
     let conversationListHandler = null;
 
@@ -3244,11 +3245,17 @@
     }
 
     function detachChatListener() {
-        if (activeMessagesRef && activeMessageHandler) {
-            activeMessagesRef.off('child_added', activeMessageHandler);
+        if (activeMessagesRef) {
+            if (activeMessageHandler) {
+                activeMessagesRef.off('child_added', activeMessageHandler);
+            }
+            if (activeMessageChangeHandler) {
+                activeMessagesRef.off('child_changed', activeMessageChangeHandler);
+            }
         }
         activeMessagesRef = null;
         activeMessageHandler = null;
+        activeMessageChangeHandler = null;
     }
 
     function listenToMessages(conversationId) {
@@ -3266,13 +3273,21 @@
         activeMessageHandler = snapshot => {
             const data = snapshot.val();
             if (!data || !data.text) return;
+            data.id = snapshot.key;
             appendMessage(data);
         };
 
         activeMessagesRef.on('child_added', activeMessageHandler);
+        activeMessageChangeHandler = snapshot => {
+            const data = snapshot.val();
+            if (!data) return;
+            data.id = snapshot.key;
+            updateMessageReaction(data);
+        };
+        activeMessagesRef.on('child_changed', activeMessageChangeHandler);
 
         setTimeout(() => {
-            if (chatBox.children.length === 0) {
+            if (!chatBox.querySelector('.message') && !chatBox.querySelector('.empty-chat')) {
                 const empty = document.createElement('div');
                 empty.className = "empty-chat";
                 empty.textContent = "Henüz mesaj yok.";
@@ -3289,6 +3304,7 @@
         const msgDiv = document.createElement('div');
         const isSent = data.senderUid === currentUid;
         msgDiv.className = isSent ? 'message sent' : 'message received';
+        msgDiv.dataset.messageId = data.id || data.messageId || '';
 
         if (!isSent) {
             const sender = document.createElement('span');
@@ -3298,11 +3314,96 @@
         }
 
         const text = document.createElement('div');
+        text.className = 'message-text';
         text.textContent = data.text;
         msgDiv.appendChild(text);
 
+        const reactions = document.createElement('div');
+        reactions.className = 'message-reactions';
+        reactions.innerHTML = buildReactionsHtml(data.reactions);
+        msgDiv.appendChild(reactions);
+
+        msgDiv.addEventListener('click', function(event) {
+            if (event.target.closest('.message-text') || event.target.closest('.message-time') || event.target.closest('.message-reactions') || event.target.closest('.message-sender')) {
+                openReactionPicker(event, data);
+            }
+        });
+
+        const time = document.createElement('div');
+        time.className = 'message-time';
+        time.textContent = formatTimestamp(data.timestamp);
+        msgDiv.appendChild(time);
+
         chatBox.appendChild(msgDiv);
         scrollToBottom();
+    }
+
+    function buildReactionsHtml(reactions) {
+        if (!reactions || Object.keys(reactions).length === 0) {
+            return '';
+        }
+        return Object.entries(reactions)
+            .map(([emoji, count]) => `<span class="reaction-pill">${emoji} ${count}</span>`)
+            .join('');
+    }
+
+    function updateMessageReaction(data) {
+        const messageElement = document.querySelector(`[data-message-id="${data.id || data.messageId}"]`);
+        if (!messageElement) return;
+        const reactionBar = messageElement.querySelector('.message-reactions');
+        if (reactionBar) reactionBar.innerHTML = buildReactionsHtml(data.reactions);
+    }
+
+    function openReactionPicker(event, messageData) {
+        event.preventDefault();
+        const picker = document.getElementById('emoji-panel');
+        picker.dataset.currentMessageId = messageData.id || messageData.messageId || '';
+        picker.dataset.currentConversationId = activeConversationId;
+        picker.dataset.reactionMode = '1';
+        buildEmojiPanel();
+        picker.classList.add('active');
+    }
+
+    function sendReaction(emoji) {
+        const picker = document.getElementById('emoji-panel');
+        const messageId = picker.dataset.currentMessageId;
+        const conversationId = picker.dataset.currentConversationId;
+        if (!messageId || !conversationId) return;
+
+        const reactionKey = encodeEmojiKey(emoji);
+        const reactionRef = database.ref(`conversations/${conversationId}/messages/${messageId}/reactions/${reactionKey}`);
+        reactionRef.transaction(currentCount => {
+            return (currentCount || 0) + 1;
+        }).then(() => {
+            delete picker.dataset.currentMessageId;
+            delete picker.dataset.currentConversationId;
+            delete picker.dataset.reactionMode;
+            picker.classList.remove('active');
+        });
+    }
+
+    function encodeEmojiKey(emoji) {
+        return emoji.replace(/\uFE0F/g, '').replace(/\s+/g, '_');
+    }
+
+    function handleEmojiSelect(emoji) {
+        const panel = document.getElementById('emoji-panel');
+        if (panel.dataset.reactionMode === '1' && panel.dataset.currentMessageId) {
+            sendReaction(emoji);
+            return;
+        }
+        insertEmoji(emoji);
+    }
+
+    function toggleEmojiPanel() {
+        buildEmojiPanel();
+        const panel = document.getElementById('emoji-panel');
+        if (panel.dataset.reactionMode) {
+            delete panel.dataset.currentMessageId;
+            delete panel.dataset.currentConversationId;
+            delete panel.dataset.reactionMode;
+        }
+        panel.classList.toggle('active');
     }
 
     function sendMessage() {
@@ -3369,16 +3470,10 @@
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.textContent = emoji;
-            btn.onclick = () => insertEmoji(emoji);
+            btn.onclick = () => handleEmojiSelect(emoji);
             panel.appendChild(btn);
         });
         panel.dataset.built = "1";
-    }
-
-    function toggleEmojiPanel() {
-        buildEmojiPanel();
-        const panel = document.getElementById('emoji-panel');
-        panel.classList.toggle('active');
     }
 
     function insertEmoji(emoji) {
