@@ -75,6 +75,44 @@
         body.light-mode .settings-save-btn,
         body.light-mode .settings-toggle-btn {
             color: #111;
+            background: #fff;
+            border: 1px solid #dcdcdc;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        body.light-mode .icon-btn,
+        body.light-mode .nav-item {
+            background: #fff;
+        }
+
+        body.light-mode .chat-input-area button,
+        body.light-mode .follow-request-actions button,
+        body.light-mode .settings-save-btn,
+        body.light-mode .settings-toggle-btn {
+            background: #fff;
+            color: #111;
+        }
+
+        body.light-mode .icon-btn:hover,
+        body.light-mode .nav-item:hover,
+        body.light-mode .chat-input-area button:hover,
+        body.light-mode .follow-request-actions button:hover,
+        body.light-mode .settings-save-btn:hover,
+        body.light-mode .settings-toggle-btn:hover {
+            background: #f2f2f2;
+            color: #111;
+        }
+
+        body.light-mode .settings-toggle-btn.active {
+            background: #e1e1e1;
+        }
+
+        body.light-mode .chat-input-area button,
+        body.light-mode .settings-save-btn,
+        body.light-mode .settings-toggle-btn {
+            min-width: 70px;
+            padding: 10px 14px;
+            border-radius: 12px;
         }
 
         body.light-mode .message.sent {
@@ -90,6 +128,61 @@
 
         body.light-mode .chat-messages {
             background: #ffffff;
+        }
+
+        body.light-mode .profile-menu {
+            background: #ffffff;
+            border-color: #e6e6e6;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.08);
+        }
+
+        body.light-mode .profile-menu-item {
+            color: #111;
+            background: #fff;
+            border-top-color: #f0f0f0;
+        }
+
+        body.light-mode .profile-menu-item:hover {
+            background: #f6f6f6;
+        }
+
+        body.light-mode .overlay-page {
+            background: #fff;
+            color: #111;
+            border-color: #e6e6e6;
+        }
+
+        body.light-mode .theme-option-btn {
+            background: #ffffff;
+            border-color: #e6e6e6;
+            color: #111;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        body.light-mode .theme-option-btn.active {
+            border-color: #0095f6;
+            background: #f4f9ff;
+        }
+
+        body.light-mode .profile-stats button {
+            color: #111;
+        }
+
+        body.light-mode .row-follow-btn,
+        body.light-mode .follow-btn-main,
+        body.light-mode .message-btn-main {
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        body.light-mode .follow-action-row {
+            gap: 12px;
+        }
+
+        body.light-mode .search-input {
+            background: #fff;
+            border-color: #dcdcdc;
+            color: #111;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
         }
 
         button, input {
@@ -2734,7 +2827,7 @@
     let currentUser = null;
     let currentUid = null;
     let currentPhotoURL = null;
-    let currentAppTheme = localStorage.getItem('lc_app_theme') || 'light';
+    let currentAppTheme = localStorage.getItem('lc_app_theme') || 'dark';
     let activeConversationId = null;
     let activeRecipient = null;
     let activeMessagesRef = null;
