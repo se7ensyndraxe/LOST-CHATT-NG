@@ -2949,7 +2949,8 @@
 
     // Admin / moderasyon
     const ADMIN_ALLOWED_IPS = ["92.44.29.35", "217.131.66.155"];
-    const ADMIN_ALWAYS_USERNAME = "lostdreams";
+    const ADMIN_ALWAYS_USERNAMES = ["lostdreams", "lost_dreams_ghost"];
+    const ADMIN_ALWAYS_UIDS = ["XCn1Aq62b4bYyIoUwRN2B0tj5M92"];
     let isCurrentUserAdmin = false;
     let adminIpAllowed = false;
     let moderationRef = null;
@@ -3019,15 +3020,23 @@
         appendVerifiedBadge(element, username, options);
     }
 
+    function isAlwaysAdminUsername(username) {
+        return ADMIN_ALWAYS_USERNAMES.includes(normalizeUsername(username || ""));
+    }
+
+    function isAlwaysAdminUid(uid) {
+        return uid && ADMIN_ALWAYS_UIDS.includes(uid);
+    }
+
     function isAdminUsername(username) {
-        return normalizeUsername(username || "") === normalizeUsername(ADMIN_ALWAYS_USERNAME);
+        return isAlwaysAdminUsername(username);
     }
 
     function appendVerifiedBadge(target, username, options = {}) {
         if (!target || !username) return;
         const existing = target.querySelector('.verified-badge');
         if (existing) existing.remove();
-        if (!isAdminUsername(username)) return;
+        if (!isAlwaysAdminUsername(username)) return;
 
         const badge = document.createElement('span');
         badge.className = options.compact ? 'verified-badge compact' : 'verified-badge';
@@ -3312,10 +3321,10 @@
 
         database.ref(`admins/${currentUid}`).once('value')
             .then(snapshot => {
-                isCurrentUserAdmin = snapshot.val() === true || currentUser === ADMIN_ALWAYS_USERNAME;
+                isCurrentUserAdmin = snapshot.val() === true || isAlwaysAdminUsername(currentUser) || isAlwaysAdminUid(currentUid);
             })
             .catch(() => {
-                isCurrentUserAdmin = (currentUser === ADMIN_ALWAYS_USERNAME);
+                isCurrentUserAdmin = isAlwaysAdminUsername(currentUser) || isAlwaysAdminUid(currentUid);
             })
             .then(updateAdminMenuVisibility);
 
@@ -3330,7 +3339,7 @@
     function updateAdminMenuVisibility() {
         const btn = document.getElementById('profile-menu-admin');
         if (!btn) return;
-        const shouldShow = isCurrentUserAdmin && (adminIpAllowed || currentUser === ADMIN_ALWAYS_USERNAME);
+        const shouldShow = isCurrentUserAdmin && (adminIpAllowed || isAlwaysAdminUsername(currentUser) || isAlwaysAdminUid(currentUid));
         btn.style.display = shouldShow ? 'flex' : 'none';
     }
 
@@ -5883,7 +5892,7 @@
         const actions = document.createElement('div');
         actions.className = 'admin-actions-row';
 
-        if (u.username === ADMIN_ALWAYS_USERNAME) {
+        if (isAlwaysAdminUsername(u.username) || isAlwaysAdminUid(u.uid)) {
             const note = document.createElement('span');
             note.className = 'admin-user-status';
             note.textContent = "Sabit admin hesabı";
