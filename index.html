@@ -476,6 +476,51 @@
             border: 1px solid rgba(255,255,255,0.08);
         }
 
+        .typing-indicator {
+            min-width: 84px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            color: #ddd;
+            background: rgba(255,255,255,0.08);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            justify-content: center;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            height: 28px;
+            margin-left: 6px;
+        }
+
+        .typing-indicator.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .typing-indicator span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: #fff;
+            border-radius: 50%;
+            animation: typing-dot 1.2s infinite ease-in-out;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing-dot {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.3; }
+            40% { transform: translateY(-3px); opacity: 1; }
+        }
+
         .chat-status {
             min-height: 18px;
             color: #a8a8a8;
@@ -2300,6 +2345,7 @@
                     <div id="chat-status-overlay" style="font-size:11px;color:#777;"></div>
                 </div>
             </div>
+            <div id="typing-indicator" class="typing-indicator"></div>
             <button class="icon-btn" aria-label="Sohbet menüsü" onclick="toggleChatMenu(event)">
                 <i class="fa-solid fa-ellipsis-vertical"></i>
             </button>
@@ -2319,7 +2365,7 @@
                 <button type="button" id="emoji-toggle-btn" class="emoji-toggle-btn" aria-label="Emoji" onclick="toggleEmojiPanel()">
                     <i class="fa-regular fa-face-smile"></i>
                 </button>
-                <input type="text" id="message-input" placeholder="Mesaj gönder..." onkeydown="handleKeyPress(event)" disabled>
+                <input type="text" id="message-input" placeholder="Mesaj gönder..." oninput="handleTypingInput()" onkeydown="handleKeyPress(event)" disabled>
                 <button id="send-button" onclick="sendMessage()" disabled>
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
@@ -2580,6 +2626,9 @@
     let activeMessagesRef = null;
     let activeMessageHandler = null;
     let activeMessageChangeHandler = null;
+    let activeTypingRef = null;
+    let activeTypingListener = null;
+    let typingTimeout = null;
     let conversationListRef = null;
     let conversationListHandler = null;
 
@@ -3157,6 +3206,8 @@
             setComposerEnabled(true);
             applyChatTheme();
             listenToMessages(conversationId);
+            listenToTypingStatus();
+            setReadReceipt();
             closeNewDmSearch();
             showOverlay('dm-chat-overlay');
             scrollToBottom();
@@ -3165,6 +3216,9 @@
 
     function closeDmChat() {
         detachChatListener();
+        detachTypingListener();
+        clearTypingTimeout();
+        setTypingStatus(false);
         setComposerEnabled(false);
         activeConversationId = null;
         activeRecipient = null;
@@ -3260,6 +3314,20 @@
         activeMessageChangeHandler = null;
     }
 
+    function detachTypingListener() {
+        if (activeTypingRef && activeTypingListener) {
+            activeTypingRef.off('value', activeTypingListener);
+        }
+        activeTypingRef = null;
+        activeTypingListener = null;
+
+        const typingIndicator = document.getElementById('typing-indicator');
+        if (typingIndicator) {
+            typingIndicator.classList.remove('active');
+            typingIndicator.innerHTML = '';
+        }
+    }
+
     function listenToMessages(conversationId) {
         detachChatListener();
 
@@ -3298,6 +3366,57 @@
         }, 400);
     }
 
+    function listenToTypingStatus() {
+        if (!activeConversationId || !currentUid) return;
+
+        detachTypingListener();
+        const typingIndicator = document.getElementById('typing-indicator');
+        const otherUid = activeRecipient?.uid;
+        if (!otherUid) return;
+
+        activeTypingRef = database.ref(`conversations/${activeConversationId}/typing/${otherUid}`);
+        activeTypingListener = snapshot => {
+            const isTyping = snapshot.val() === true;
+            if (!typingIndicator) return;
+            typingIndicator.classList.toggle('active', isTyping);
+            typingIndicator.innerHTML = isTyping ? '<span></span><span></span><span></span> Yazıyor...' : '';
+        };
+        activeTypingRef.on('value', activeTypingListener);
+    }
+
+    function setTypingStatus(isTyping) {
+        if (!activeConversationId || !currentUid) return;
+        const ref = database.ref(`conversations/${activeConversationId}/typing/${currentUid}`);
+        if (isTyping) {
+            ref.set(true).catch(() => {});
+        } else {
+            ref.set(null).catch(() => {});
+        }
+    }
+
+    function clearTypingTimeout() {
+        if (typingTimeout) {
+            clearTimeout(typingTimeout);
+            typingTimeout = null;
+        }
+    }
+
+    function handleTypingInput() {
+        if (!activeConversationId || !currentUid) return;
+        setTypingStatus(true);
+        clearTypingTimeout();
+        typingTimeout = setTimeout(() => {
+            setTypingStatus(false);
+            typingTimeout = null;
+        }, 3000);
+    }
+
+    function setReadReceipt() {
+        if (!activeConversationId || !currentUid) return;
+        const ref = database.ref(`conversations/${activeConversationId}/readReceipts/${currentUid}`);
+        ref.set(firebase.database.ServerValue.TIMESTAMP).catch(() => {});
+    }
+
     function appendMessage(data) {
         const chatBox = document.getElementById('chat-box');
         const empty = chatBox.querySelector('.empty-chat');
@@ -3320,11 +3439,6 @@
         text.textContent = data.text;
         msgDiv.appendChild(text);
 
-        const reactions = document.createElement('div');
-        reactions.className = 'message-reactions';
-        reactions.innerHTML = buildReactionsHtml(data.reactions);
-        msgDiv.appendChild(reactions);
-
         msgDiv.addEventListener('click', function(event) {
             if (event.target.closest('.message-text') || event.target.closest('.message-time') || event.target.closest('.message-reactions') || event.target.closest('.message-sender')) {
                 openReactionPicker(event, data);
@@ -3336,7 +3450,15 @@
         time.textContent = formatTimestamp(data.timestamp);
         msgDiv.appendChild(time);
 
+        const reactions = document.createElement('div');
+        reactions.className = 'message-reactions';
+        reactions.innerHTML = buildReactionsHtml(data.reactions);
+        msgDiv.appendChild(reactions);
+
         chatBox.appendChild(msgDiv);
+        if (!isSent) {
+            setReadReceipt();
+        }
         scrollToBottom();
     }
 
@@ -3448,8 +3570,10 @@
             })
             .then(() => {
                 input.value = "";
+                setTypingStatus(false);
             })
             .catch(() => {
+                setTypingStatus(false);
                 setChatStatus("Mesaj gönderilemedi. Firebase izinlerini kontrol et.", true);
             });
     }
