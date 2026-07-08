@@ -3761,15 +3761,24 @@
 
     function listenToReels() {
         detachReelsListener();
-        reelsRootRef = database.ref('reels').orderByChild('timestamp').limitToLast(50);
-        reelsRootRef.on('value', snapshot => renderReelsFeed(snapshot));
+        // orderByChild kaldırıldı — index yoksa Firebase sessizce boş döndürür.
+        // Tüm reels'i çekip client-side sıralıyoruz.
+        reelsRootRef = database.ref('reels');
+        reelsRootRef.on('value', snapshot => renderReelsFeed(snapshot), err => {
+            console.error('listenToReels error:', err);
+        });
     }
 
     function renderReelsFeed(snapshot) {
         const items = [];
-        snapshot.forEach(child => items.push({ id: child.key, ...child.val() }));
-        items.reverse();
-        allReelsItems = items;
+        snapshot.forEach(child => {
+            const val = child.val();
+            if (val && val.videoUrl) items.push({ id: child.key, ...val });
+        });
+        // Client-side sırala: en yeni önce
+        items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        const limited = items.slice(0, 50);
+        allReelsItems = limited;
 
         renderReelsTab();
         renderHomeReels();
@@ -4391,25 +4400,27 @@
 
         uploadToFileServer('/upload/reel', 'video', file, filename)
             .then(url => {
-                const newReelRef = database.ref('reels').push();
-                return newReelRef.set({
+                console.log("Sunucudan URL alındı:", url);
+                statusEl.textContent = "Sunucuya yüklendi, Firebase'e kaydediliyor...";
+                const newRef = database.ref('reels').push();
+                return newRef.set({
                     uid: currentUid,
                     username: currentUser,
                     videoUrl: url,
                     caption: caption,
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
-                });
+                    timestamp: Date.now()
+                }).then(() => console.log("Firebase'e kaydedildi:", newRef.key));
             })
             .then(() => {
                 pendingReelFile = null;
                 document.getElementById('reel-preview-video').src = "";
-                hideOverlay('reel-share-overlay');
                 statusEl.textContent = "";
                 confirmBtn.disabled = false;
+                hideOverlay('reel-share-overlay');
             })
             .catch(err => {
                 console.error("Reels yükleme hatası:", err);
-                statusEl.textContent = "Paylaşılamadı: " + (err && err.message ? err.message : "bilinmeyen hata");
+                statusEl.textContent = "Hata: " + (err && err.message ? err.message : "bilinmeyen hata") + " — F12 > Console'a bak";
                 confirmBtn.disabled = false;
             });
     }
