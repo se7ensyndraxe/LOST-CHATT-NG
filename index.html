@@ -488,21 +488,11 @@
         }
 
         .chat-container {
-            position: relative;
             flex: 1;
             min-height: 0;
             display: flex;
             flex-direction: column;
-            background: transparent;
-        }
-
-        .chat-bg-layer {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 0;
-            opacity: 0.96;
-            background: linear-gradient(180deg, rgba(24,24,24,0.92) 0%, rgba(6,6,6,0.95) 100%), radial-gradient(circle at 15% 15%, rgba(255,255,255,0.12), transparent 14%), radial-gradient(circle at 85% 20%, rgba(255,255,255,0.08), transparent 12%);
+            background: linear-gradient(180deg, #050505 0%, #0d0d0d 100%);
         }
 
         .chat-messages {
@@ -515,12 +505,12 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            background: transparent;
+            background: linear-gradient(180deg, #101010 0%, #0b0b0b 100%);
         }
 
         .empty-chat {
             margin: auto;
-            color: #777;
+            color: #c0c0c0;
             text-align: center;
             font-size: 14px;
             max-width: 260px;
@@ -1134,13 +1124,9 @@
 
         /* ===== Love teması ===== */
         .theme-love .chat-messages {
-            background: transparent;
+            background: linear-gradient(180deg, #2b1620 0%, #1c1018 100%);
             position: relative;
             overflow: hidden;
-        }
-
-        .theme-love .chat-bg-layer {
-            background: linear-gradient(180deg, #2d1221 0%, #171016 65%, #120b12 100%), radial-gradient(circle at 20% 20%, rgba(255, 178, 205, 0.16), transparent 18%), radial-gradient(circle at 90% 40%, rgba(255, 155, 219, 0.18), transparent 16%);
         }
 
         .theme-love .chat-input-area {
@@ -1178,11 +1164,7 @@
         }
 
         .theme-default .chat-messages {
-            background: transparent;
-        }
-
-        .theme-default .chat-bg-layer {
-            background: linear-gradient(180deg, #10121a 0%, #0c0d13 65%, #07080c 100%), radial-gradient(circle at 15% 15%, rgba(255,255,255,0.08), transparent 14%), radial-gradient(circle at 70% 35%, rgba(255,255,255,0.05), transparent 12%);
+            background: linear-gradient(180deg, #0d0d0d 0%, #090909 100%);
         }
 
         .theme-default .chat-input-area {
@@ -1209,11 +1191,7 @@
         }
 
         .theme-dark .chat-messages {
-            background: transparent;
-        }
-
-        .theme-dark .chat-bg-layer {
-            background: linear-gradient(180deg, #050811 0%, #0b1221 55%, #101528 100%), radial-gradient(circle at 25% 10%, rgba(255,255,255,0.05), transparent 12%), radial-gradient(circle at 80% 25%, rgba(255,255,255,0.04), transparent 10%);
+            background: linear-gradient(180deg, #0a0a1a 0%, #050510 100%);
         }
 
         .theme-dark .chat-input-area {
@@ -1240,11 +1218,7 @@
         }
 
         .theme-ocean .chat-messages {
-            background: transparent;
-        }
-
-        .theme-ocean .chat-bg-layer {
-            background: linear-gradient(180deg, #0a314c 0%, #072038 55%, #041526 100%), radial-gradient(circle at 20% 18%, rgba(255,255,255,0.12), transparent 12%), radial-gradient(circle at 80% 42%, rgba(255,255,255,0.08), transparent 10%);
+            background: linear-gradient(180deg, #071e2e 0%, #04111c 100%);
         }
 
         .theme-ocean .chat-input-area {
@@ -1271,11 +1245,7 @@
         }
 
         .theme-forest .chat-messages {
-            background: transparent;
-        }
-
-        .theme-forest .chat-bg-layer {
-            background: linear-gradient(180deg, #0b2b0b 0%, #08220a 55%, #051807 100%), radial-gradient(circle at 18% 18%, rgba(255,255,255,0.08), transparent 12%), radial-gradient(circle at 72% 28%, rgba(255,255,255,0.05), transparent 10%);
+            background: linear-gradient(180deg, #071a07 0%, #040e04 100%);
         }
 
         .theme-forest .chat-input-area {
@@ -2406,7 +2376,6 @@
             </div>
         </div>
         <div class="chat-container">
-            <div class="chat-bg-layer" id="chat-bg-layer"></div>
             <div class="chat-messages" id="chat-box">
                 <div class="love-hearts-layer" id="love-hearts-layer"></div>
                 <div class="empty-chat">Mesajlaşmaya başla!</div>
@@ -3168,20 +3137,12 @@
     }
 
     function applyChatTheme() {
-        const key = activeConversationId ? 'lc_theme_' + activeConversationId : null;
-        const theme = key ? (localStorage.getItem(key) || 'default') : 'default';
         const chatPage = document.getElementById('chat-page');
         const dmOverlay = document.getElementById('dm-chat-overlay');
         const themeClasses = ['theme-love', 'theme-default', 'theme-dark', 'theme-ocean', 'theme-forest'];
 
         if (chatPage) themeClasses.forEach(cls => chatPage.classList.remove(cls));
         if (dmOverlay) themeClasses.forEach(cls => dmOverlay.classList.remove(cls));
-
-        if (theme !== 'default') {
-            if (chatPage) chatPage.classList.add('theme-' + theme);
-            if (dmOverlay) dmOverlay.classList.add('theme-' + theme);
-        }
-        spawnLoveHearts();
     }
 
     function spawnLoveHearts() {
@@ -3370,11 +3331,6 @@
 
         const chatBox = document.getElementById('chat-box');
         chatBox.innerHTML = "";
-        const heartsLayer = document.createElement('div');
-        heartsLayer.className = 'love-hearts-layer';
-        heartsLayer.id = 'love-hearts-layer';
-        chatBox.appendChild(heartsLayer);
-        spawnLoveHearts();
 
         activeMessagesRef = database.ref(`conversations/${conversationId}/messages`).limitToLast(200);
         activeMessageHandler = snapshot => {
@@ -3422,7 +3378,7 @@
 
         const text = document.createElement('div');
         text.className = 'message-text';
-        text.textContent = data.text || data.message || '';
+        text.textContent = data.text || '';
         msgDiv.appendChild(text);
 
         const reactions = document.createElement('div');
@@ -3447,7 +3403,7 @@
 
     function buildReactionsHtml(reactions) {
         if (!reactions || Object.keys(reactions).length === 0) {
-            return '<span class="reaction-placeholder">Tepki ekle</span>';
+            return '';
         }
         return Object.entries(reactions)
             .map(([emoji, count]) => `<span class="reaction-pill">${emoji} ${count}</span>`)
