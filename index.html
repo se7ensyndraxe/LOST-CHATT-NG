@@ -496,6 +496,8 @@
         }
 
         .chat-messages {
+            position: relative;
+            z-index: 1;
             flex: 1;
             min-height: 0;
             padding: 18px 14px 12px;
@@ -503,7 +505,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            background: transparent;
+            background: linear-gradient(180deg, #101010 0%, #0b0b0b 100%);
         }
 
         .empty-chat {
@@ -3272,7 +3274,7 @@
         activeMessagesRef = database.ref(`conversations/${conversationId}/messages`).limitToLast(200);
         activeMessageHandler = snapshot => {
             const data = snapshot.val();
-            if (!data || !data.text) return;
+            if (!data) return;
             data.id = snapshot.key;
             appendMessage(data);
         };
@@ -3384,6 +3386,13 @@
 
     function encodeEmojiKey(emoji) {
         return emoji.replace(/\uFE0F/g, '').replace(/\s+/g, '_');
+    }
+
+    function formatTimestamp(timestamp) {
+        if (!timestamp) return '';
+        const date = new Date(timestamp);
+        if (isNaN(date.getTime())) return '';
+        return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
     }
 
     function handleEmojiSelect(emoji) {
