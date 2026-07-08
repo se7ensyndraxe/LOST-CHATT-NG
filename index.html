@@ -918,10 +918,8 @@
 
         .emoji-panel {
             display: none;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 2px;
             padding: 10px;
-            max-height: 220px;
+            max-height: 260px;
             overflow-y: auto;
             background: #0c0c0c;
             border-top: 1px solid #262626;
@@ -929,7 +927,37 @@
         }
 
         .emoji-panel.active {
+            display: block;
+        }
+
+        .emoji-categories {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .emoji-category-tab {
+            padding: 7px 10px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #ddd;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+
+        .emoji-category-tab.active {
+            background: #1a1a1a;
+            border-color: #4a90e2;
+            color: #fff;
+        }
+
+        .emoji-grid {
             display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
         }
 
         .emoji-panel button {
@@ -937,9 +965,9 @@
             border: 0;
             font-size: 22px;
             line-height: 1;
-            padding: 7px 0;
+            padding: 8px 0;
             cursor: pointer;
-            border-radius: 8px;
+            border-radius: 10px;
         }
 
         .emoji-panel button:hover {
@@ -4007,28 +4035,119 @@
     }
 
     // ===== Emoji paneli =====
-    const EMOJI_LIST = [
-        "😀","😁","😂","🤣","😊","😍","😘","😎","🤩","🥳",
-        "😏","😉","😇","🙂","🙃","😅","😆","😜","🤪","😋",
-        "😢","😭","😡","😤","😱","😴","🤔","🤗","😐","🙄",
-        "🥺","😳","🤤","😬","😷","🤒","🥶","🥵","🤯","😈",
-        "👍","👎","👏","🙏","💪","🤝","✌️","🤞","👌","🫶",
-        "❤️","🧡","💛","💚","💙","💜","🖤","🤍","💔","❣️",
-        "💕","💖","💗","💘","💝","😻","🔥","✨","🎉","🎊",
-        "💯","⭐","🌟","☀️","🌙","🌹","🍻","🍕","🎶","📸"
+    const EMOJI_CATEGORIES = [
+        {
+            id: 'smileys',
+            label: 'Yüzler',
+            emojis: [
+                '😀','😃','😄','😁','😆','😅','😂','🤣','😭','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔'
+            ]
+        },
+        {
+            id: 'people',
+            label: 'İnsanlar',
+            emojis: [
+                '👋','🤚','🖐️','✋','🖖','👌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','🤳','💪','🦾','🦿','🦵','🦶','👂','🦻','👃','🧠','🦷','🦴','👀','👁️','👅','👄','💋','🩸',
+                '👶','🧒','👦','👧','🧑','👱','👨','🧔','👨‍🦰','👨‍🦱','👨‍🦲','👩','👩‍🦰','👩‍🦱','👩‍🦳','👩‍🦲','👱‍♀️','👱‍♂️','🧓','👴','👵','🙍‍♂️','🙍‍♀️','🙅‍♂️','🙅‍♀️','🙆‍♂️','🙆‍♀️','💁‍♂️','💁‍♀️','🙋‍♂️','🙋‍♀️','🧏‍♂️','🧏‍♀️','🙇‍♂️','🙇‍♀️','🤦‍♂️','🤦‍♀️','🤷‍♂️','🤷‍♀️','🧑‍⚕️','🧑‍🎓','🧑‍🏫','🧑‍⚖️','🧑‍🌾','🧑‍🍳','🧑‍🔧','🧑‍🏭','🧑‍💼','🧑‍🔬','🧑‍💻','🧑‍🎤','🧑‍🎨','🧑‍✈️','🧑‍🚀','🧑‍🚒','👮‍♂️','👮‍♀️','🕵️‍♂️','🕵️‍♀️','💂‍♂️','💂‍♀️','👷‍♂️','👷‍♀️','🤴','👸','👳‍♂️','👳‍♀️','👲','🧕','🤵','👰','🤰','🤱','🧑‍🍼'
+            ]
+        },
+        {
+            id: 'animals',
+            label: 'Hayvanlar',
+            emojis: [
+                '🐶','🐱','🐭','🐹','🐰','🦊','🦝','🐻','🐼','🦘','🦡','🐨','🐯','🦁','🐮','🐷','🐽','🐸','🐵','🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦢','🦅','🦉','🦚','🦜','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕷️','🕸️','🦂','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🦓','🦍','🦧','🐘','🦛','🦏','🐪','🐫','🦒','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🐈','🐓','🦃','🦚','🦜','🦢','🕊️','🐇','🐁','🐀','🐹'
+            ]
+        },
+        {
+            id: 'nature',
+            label: 'Doğa',
+            emojis: [
+                '🌵','🎄','🌲','🌳','🌴','🌱','🌿','☘️','🍀','🎍','🎋','🍃','🍂','🍁','🍄','🐚','🌾','💐','🌷','🌹','🥀','🌺','🌸','🌼','🌻','🌞','🌝','🌛','🌜','🌙','🪐','🌟','⭐️','🌠','🌌','☁️','⛅','⛈️','🌤️','🌥️','🌦️','🌧️','🌨️','🌩️','🌪️','🌫️','🌬️','🌀','🌈','☂️','☔','⚡','❄️','☃️','⛄','☄️','🔥','💧','🌊'
+            ]
+        },
+        {
+            id: 'food',
+            label: 'Yiyecek',
+            emojis: [
+                '🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🌽','🥕','🧅','🥔','🍠','🥐','🍞','🥖','🥨','🥯','🥞','🧇','🧀','🍖','🍗','🥩','🥓','🍔','🍟','🍕','🌭','🥪','🌮','🌯','🍳','🥘','🍲','🥣','🥗','🍿','🧈','🧂','🥫','🦪','🍱','🍙','🍚','🍛','🍜','🍝','🍢','🍣','🍤','🍥','🥮','🍡','🥟','🥠','🥡','🍦','🍧','🍨','🍩','🍪','🎂','🍰','🧁','🥧','🍫','🍬','🍭','🍮','🍯','🍼','🥛','☕','🍵','🍶','🍾','🍷','🍸','🍹','🍺','🍻','🥂','🥃','🥤','🧃','🧉','🧊'
+            ]
+        },
+        {
+            id: 'travel',
+            label: 'Seyahat',
+            emojis: [
+                '🚗','🚙','🏎️','🚌','🚐','🚑','🚒','🚓','🚖','🚕','🚂','🚲','🛵','🏍️','🛺','🚨','🚔','🚍','🚘','🚡','🚟','🚠','🚝','🚄','🚅','🚈','🚇','🚊','🚉','🚁','🛩️','✈️','🛫','🛬','🪂','💺','🛰️','🚀','🛸','🛶','⛵','🛥️','🚤','🛳️','⛴️','🚢','🗺️','🗿','🏔️','⛰️','🌋','🗻','🏕️','🏖️','🏜️','🏝️','🏞️','🏟️','🏛️','🏗️','🧱','🏘️','🏠','🏡','🏢','🏣','🏤','🏦','🏨','🏩','🏪','🏫','🏬','🏭','🏯','🏰','💒','🗼','🗽','⛪','🕌','🛕','⛩️','⛲','⛺','🌁','🌃','🏙️','🌄','🌅','🌆','🌇','🌉','🌌','🎠','🎡','🎢'
+            ]
+        },
+        {
+            id: 'activities',
+            label: 'Aktiviteler',
+            emojis: [
+                '🎃','🎄','🎆','🎇','🧨','✨','🎈','🎉','🎊','🧑‍🎨','🎤','🎧','🎨','🎭','🎬','🎟️','🎫','🎖️','🏆','🏅','🥇','🥈','🥉','⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🏓','🏸','🏒','🏑','🥍','🏏','🥅','⛳','🪁','🏹','🎣','🤿','🥊','🥋','🎽','🛹','🛷','⛸️','🥌','🎿','⛷️','🏂','🏋️','🤺','🤼','🤸','⛹️','🤾','🚴','🚵','🧘'
+            ]
+        },
+        {
+            id: 'objects',
+            label: 'Nesneler',
+            emojis: [
+                '📱','📲','💻','⌨️','🖥️','🖨️','🖱️','🕹️','💽','💾','💿','📀','🧮','🎥','🎞️','📽️','🎬','📺','📷','📸','📹','📼','🔍','🔎','💡','🔦','🏮','🪔','📡','✉️','📧','📨','📩','📤','📥','📦','📫','📪','📬','📭','📮','🗳️','✏️','✒️','🖋️','🖊️','🖌️','🖍️','📝','💼','📁','📂','🗂️','📅','📆','🗒️','🗓️','📇','📈','📉','📊','📋','📌','📍','📎','🖇️','📏','📐','✂️','🗃️','🗄️','🗑️','🔒','🔓','🔏','🔐','🔑','🗝️','🔨','🪓','⛏️','⚒️','🛠️','🗡️','⚔️','🔫','🪃','🏹','🛡️','🔧','🪛','🔩','⚙️','🗜️','⚖️','🦯','🔗','⛓️','🧫','🧪','🌡️','🧹','🧺','🧻','🚽','🚰','🚿','🛁','🔑','🪞','🧳','🌂','☂️','🚬','⚱️','⚰️','🔮','🧿'
+            ]
+        },
+        {
+            id: 'symbols',
+            label: 'Semboller',
+            emojis: [
+                '⚠️','🚸','⛔','🚫','🚳','🚭','🚯','🚱','🚷','📵','🔞','☢️','☣️','⬆️','↗️','➡️','↘️','⬇️','↙️','⬅️','↖️','↕️','↔️','↩️','↪️','⤴️','⤵️','🔃','🔄','🔙','🔚','🔛','🔜','🔝','🛐','⚛️','🕉️','✡️','☸️','☯️','✝️','☦️','☪️','🕎','🔯','♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓','⛎','🔀','🔁','🔂','▶️','⏩','⏭️','⏯️','◀️','⏪','⏮️','🔼','⏫','🔽','⏬','⏸️','⏹️','⏺️','⏏️','🎦','🔅','🔆','📶','📳','📴','➕','➖','➗','✖️','♾️','💲','💱','™️','®️','©️','〰️','➰','➿','🔚','🔙','🔛','🔜','🔝','✔️','☑️','🔘','⚪','⚫','🔴','🔵','🔺','🔻','🔸','🔹','🔶','🔷','▪️','▫️','⬛','⬜','🏁','🚩','🎌','🏴','🏳️','🏳️‍🌈','🏳️‍⚧️','🏴‍☠️','0️⃣','1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'
+            ]
+        }
     ];
 
     function buildEmojiPanel() {
         const panel = document.getElementById('emoji-panel');
         if (panel.dataset.built) return;
-        EMOJI_LIST.forEach(emoji => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.textContent = emoji;
-            btn.onclick = () => handleEmojiSelect(emoji);
-            panel.appendChild(btn);
+
+        const categoriesBar = document.createElement('div');
+        categoriesBar.className = 'emoji-categories';
+
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'emoji-grid';
+        gridContainer.id = 'emoji-grid';
+
+        EMOJI_CATEGORIES.forEach((category, index) => {
+            const tab = document.createElement('button');
+            tab.type = 'button';
+            tab.className = 'emoji-category-tab' + (index === 0 ? ' active' : '');
+            tab.textContent = category.label;
+            tab.onclick = () => showEmojiCategory(category.id);
+            categoriesBar.appendChild(tab);
+
+            category.emojis.forEach(emoji => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = emoji;
+                btn.dataset.category = category.id;
+                btn.onclick = () => handleEmojiSelect(emoji);
+                if (index !== 0) btn.style.display = 'none';
+                gridContainer.appendChild(btn);
+            });
         });
-        panel.dataset.built = "1";
+
+        panel.appendChild(categoriesBar);
+        panel.appendChild(gridContainer);
+        panel.dataset.built = '1';
+    }
+
+    function showEmojiCategory(categoryId) {
+        const panel = document.getElementById('emoji-panel');
+        const tabs = panel.querySelectorAll('.emoji-category-tab');
+        tabs.forEach(tab => {
+            tab.classList.toggle('active', tab.textContent === EMOJI_CATEGORIES.find(c => c.id === categoryId)?.label);
+        });
+
+        const buttons = panel.querySelectorAll('.emoji-grid button');
+        buttons.forEach(btn => {
+            btn.style.display = btn.dataset.category === categoryId ? 'inline-flex' : 'none';
+        });
     }
 
     function insertEmoji(emoji) {
