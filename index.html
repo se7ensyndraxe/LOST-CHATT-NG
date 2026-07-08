@@ -1494,7 +1494,7 @@
             flex: 1;
             min-height: 0;
             overflow-y: auto;
-            padding: 6px 0;
+            padding: 8px 10px 16px;
         }
 
         .search-hint, .search-empty {
@@ -1508,21 +1508,29 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 10px 16px;
+            padding: 12px 14px;
             cursor: pointer;
+            border-radius: 16px;
+            margin: 4px 0;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid transparent;
+            transition: background 0.15s, border-color 0.15s, transform 0.15s;
         }
 
         .user-row:hover {
-            background: #0a0a0a;
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.08);
+            transform: translateY(-1px);
         }
 
         .row-avatar {
             width: 44px;
             height: 44px;
             border-radius: 50%;
-            border: 1px solid #333;
+            border: 1px solid rgba(255,255,255,0.08);
             flex-shrink: 0;
             font-size: 17px;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
         }
 
         .user-row-info {
@@ -1538,11 +1546,16 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
         }
 
         .user-row-sub {
             font-size: 12px;
             color: #a8a8a8;
+            margin-top: 2px;
         }
 
         .row-follow-btn {
@@ -1552,10 +1565,63 @@
             font-weight: 700;
             font-size: 12px;
             padding: 7px 14px;
-            border-radius: 8px;
+            border-radius: 999px;
             cursor: pointer;
             flex-shrink: 0;
+            min-width: 82px;
             transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1), opacity 0.15s;
+        }
+
+        .dm-search-hero {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 18px;
+            margin: 12px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+        }
+
+        .dm-search-hero .hero-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 153, 246, 0.18);
+            color: #5fb7ff;
+            font-size: 18px;
+        }
+
+        .dm-search-hero h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .dm-search-hero p {
+            margin: 0;
+            color: #a8a8a8;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .dm-search-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .dm-search-chip {
+            font-size: 12px;
+            color: #d0d0d0;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 6px 10px;
+            border-radius: 999px;
         }
 
         .row-follow-btn:active { transform: scale(0.92); }
@@ -1707,12 +1773,14 @@
             flex-direction: column;
             align-items: center;
             gap: 20px;
-            z-index: 5;
+            z-index: 30;
             pointer-events: none;
         }
 
         .reel-side-actions > * {
             pointer-events: auto;
+            position: relative;
+            z-index: 1;
         }
 
         .reel-like-btn {
@@ -1726,6 +1794,8 @@
             cursor: pointer;
             font-size: 11px;
             touch-action: manipulation;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .reel-like-btn i {
@@ -2539,6 +2609,16 @@
         });
     }
 
+    function setUsernameLabel(element, username, options = {}) {
+        if (!element) return;
+        element.innerHTML = '';
+        const text = document.createElement('span');
+        text.className = 'username-text';
+        text.textContent = username || '?';
+        element.appendChild(text);
+        appendVerifiedBadge(element, username, options);
+    }
+
     function isAdminUsername(username) {
         return normalizeUsername(username || "") === normalizeUsername(ADMIN_ALWAYS_USERNAME);
     }
@@ -2740,8 +2820,8 @@
             mainApp.style.display = 'flex';
             setAuthError("");
 
-            document.getElementById('profile-display-name').innerText = currentUser;
-            document.getElementById('header-username').innerText = currentUser;
+            setUsernameLabel(document.getElementById('profile-display-name'), currentUser);
+            setUsernameLabel(document.getElementById('header-username'), currentUser);
 
             fetchUserProfile(currentUid).then(profile => {
                 currentPhotoURL = profile.photoURL;
@@ -3032,10 +3112,23 @@
     }
 
     function openNewDmSearch() {
-        document.getElementById('dm-search-input').value = '';
-        document.getElementById('dm-search-results').innerHTML = '<div class="search-hint">Mesaj göndermek istediğin kullanıcıyı ara.</div>';
+        const input = document.getElementById('dm-search-input');
+        const resultsBox = document.getElementById('dm-search-results');
+        input.value = '';
+        resultsBox.innerHTML = `
+            <div class="dm-search-hero">
+                <div class="hero-icon"><i class="fa-solid fa-paper-plane"></i></div>
+                <h3>Yeni mesaj başlat</h3>
+                <p>İstediğin kullanıcı adını yaz; arama sonuçları hızlıca görünür ve direkt sohbet başlatılır.</p>
+                <div class="dm-search-chips">
+                    <span class="dm-search-chip">Sohbet</span>
+                    <span class="dm-search-chip">Hızlı erişim</span>
+                    <span class="dm-search-chip">Daha temiz görünüm</span>
+                </div>
+            </div>
+        `;
         showOverlay('new-dm-overlay');
-        setTimeout(() => document.getElementById('dm-search-input').focus(), 200);
+        setTimeout(() => input.focus(), 200);
     }
 
     function closeNewDmSearch() {
@@ -3048,7 +3141,13 @@
         const query = normalizeUsername(document.getElementById('dm-search-input').value);
         const resultsBox = document.getElementById('dm-search-results');
         if (!query) {
-            resultsBox.innerHTML = '<div class="search-hint">Mesaj göndermek istediğin kullanıcıyı ara.</div>';
+            resultsBox.innerHTML = `
+                <div class="dm-search-hero">
+                    <div class="hero-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+                    <h3>Kullanıcı ara</h3>
+                    <p>Bir kullanıcı adı yazdıktan sonra sonuçlar burada görünecek ve doğrudan mesaj başlatabileceksin.</p>
+                </div>
+            `;
             return;
         }
         resultsBox.innerHTML = '<div class="search-hint">Aranıyor...</div>';
@@ -4156,14 +4255,22 @@
         likeBtn.className = isFull ? 'reel-like-btn' : 'reel-like-btn home-reel-like-btn';
         likeBtn.type = 'button';
         likeBtn.innerHTML = `<i class="fa-solid fa-heart"></i><span class="reel-like-count">0</span>`;
-        likeBtn.onclick = (e) => { e.stopPropagation(); toggleReelLike(item.id, likeBtn); };
+        likeBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleReelLike(item.id, likeBtn);
+        };
         actions.appendChild(likeBtn);
 
         const commentBtn = document.createElement('button');
         commentBtn.className = isFull ? 'reel-like-btn' : 'reel-like-btn home-reel-like-btn';
         commentBtn.type = 'button';
         commentBtn.innerHTML = `<i class="fa-regular fa-comment"></i><span class="reel-comment-count">0</span>`;
-        commentBtn.onclick = (e) => { e.stopPropagation(); openCommentPanel(item.id, item.uid); };
+        commentBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openCommentPanel(item.id, item.uid);
+        };
         actions.appendChild(commentBtn);
         listenToReelCommentCount(item.id, commentBtn);
 
@@ -4171,7 +4278,11 @@
         soundBtn.className = isFull ? 'reel-like-btn reel-sound-btn' : 'reel-like-btn home-reel-like-btn reel-sound-btn';
         soundBtn.type = 'button';
         soundBtn.innerHTML = `<i class="fa-solid ${reelSoundEnabled ? 'fa-volume-high' : 'fa-volume-xmark'}"></i>`;
-        soundBtn.onclick = (e) => { e.stopPropagation(); toggleReelSound(); };
+        soundBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleReelSound();
+        };
         actions.appendChild(soundBtn);
 
         if (isCurrentUserAdmin) {
@@ -4180,7 +4291,11 @@
             delBtn.type = 'button';
             delBtn.title = "Reels'i sil (admin)";
             delBtn.innerHTML = `<i class="fa-solid fa-trash"></i>`;
-            delBtn.onclick = (e) => { e.stopPropagation(); deleteReelAsAdmin(item.id); };
+            delBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                deleteReelAsAdmin(item.id);
+            };
             actions.appendChild(delBtn);
         }
 
