@@ -496,8 +496,6 @@
         }
 
         .chat-messages {
-            position: relative;
-            z-index: 1;
             flex: 1;
             min-height: 0;
             padding: 18px 14px 12px;
@@ -505,12 +503,12 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            background: linear-gradient(180deg, #101010 0%, #0b0b0b 100%);
+            background: transparent;
         }
 
         .empty-chat {
             margin: auto;
-            color: #c0c0c0;
+            color: #777;
             text-align: center;
             font-size: 14px;
             max-width: 260px;
@@ -518,8 +516,6 @@
         }
 
         .message {
-            position: relative;
-            z-index: 1;
             max-width: 75%;
             padding: 12px 16px;
             font-size: 14px;
@@ -527,70 +523,6 @@
             word-wrap: break-word;
             overflow-wrap: anywhere;
             box-shadow: 0 2px 10px rgba(0,0,0,0.25);
-        }
-
-        .message-text {
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-
-        .message-reactions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 8px;
-            align-items: center;
-        }
-
-        .reaction-pill {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 4px 8px;
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.14);
-            border-radius: 999px;
-            font-size: 12px;
-            color: #f3f3f3;
-            line-height: 1;
-        }
-
-        .reaction-placeholder {
-            color: #9a9a9a;
-            font-size: 12px;
-            padding: 4px 0;
-        }
-
-        .message-text {
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-
-        .message-reactions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 8px;
-            align-items: center;
-        }
-
-        .reaction-pill {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 4px 8px;
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.14);
-            border-radius: 999px;
-            font-size: 12px;
-            color: #f3f3f3;
-            line-height: 1;
-        }
-
-        .reaction-placeholder {
-            color: #9a9a9a;
-            font-size: 12px;
-            padding: 4px 0;
         }
 
         .message.sent {
@@ -2645,7 +2577,6 @@
     let activeRecipient = null;
     let activeMessagesRef = null;
     let activeMessageHandler = null;
-    let activeMessageChangeHandler = null;
     let conversationListRef = null;
     let conversationListHandler = null;
 
@@ -3137,12 +3068,12 @@
     }
 
     function applyChatTheme() {
+        const key = activeConversationId ? 'lc_theme_' + activeConversationId : null;
+        const theme = key ? (localStorage.getItem(key) || 'default') : 'default';
         const chatPage = document.getElementById('chat-page');
-        const dmOverlay = document.getElementById('dm-chat-overlay');
-        const themeClasses = ['theme-love', 'theme-default', 'theme-dark', 'theme-ocean', 'theme-forest'];
-
-        if (chatPage) themeClasses.forEach(cls => chatPage.classList.remove(cls));
-        if (dmOverlay) themeClasses.forEach(cls => dmOverlay.classList.remove(cls));
+        chatPage.className = chatPage.className.replace(/\btheme-\S+/g, '').trim();
+        if (theme !== 'default') chatPage.classList.add('theme-' + theme);
+        spawnLoveHearts();
     }
 
     function spawnLoveHearts() {
@@ -3313,17 +3244,11 @@
     }
 
     function detachChatListener() {
-        if (activeMessagesRef) {
-            if (activeMessageHandler) {
-                activeMessagesRef.off('child_added', activeMessageHandler);
-            }
-            if (activeMessageChangeHandler) {
-                activeMessagesRef.off('child_changed', activeMessageChangeHandler);
-            }
+        if (activeMessagesRef && activeMessageHandler) {
+            activeMessagesRef.off('child_added', activeMessageHandler);
         }
         activeMessagesRef = null;
         activeMessageHandler = null;
-        activeMessageChangeHandler = null;
     }
 
     function listenToMessages(conversationId) {
@@ -3331,26 +3256,23 @@
 
         const chatBox = document.getElementById('chat-box');
         chatBox.innerHTML = "";
+        const heartsLayer = document.createElement('div');
+        heartsLayer.className = 'love-hearts-layer';
+        heartsLayer.id = 'love-hearts-layer';
+        chatBox.appendChild(heartsLayer);
+        spawnLoveHearts();
 
         activeMessagesRef = database.ref(`conversations/${conversationId}/messages`).limitToLast(200);
         activeMessageHandler = snapshot => {
             const data = snapshot.val();
-            if (!data) return;
-            data.id = snapshot.key;
+            if (!data || !data.text) return;
             appendMessage(data);
         };
 
         activeMessagesRef.on('child_added', activeMessageHandler);
-        activeMessageChangeHandler = snapshot => {
-            const data = snapshot.val();
-            if (!data) return;
-            data.id = snapshot.key;
-            updateMessageReaction(data);
-        };
-        activeMessagesRef.on('child_changed', activeMessageChangeHandler);
 
         setTimeout(() => {
-            if (!chatBox.querySelector('.message') && !chatBox.querySelector('.empty-chat')) {
+            if (chatBox.children.length === 0) {
                 const empty = document.createElement('div');
                 empty.className = "empty-chat";
                 empty.textContent = "Henüz mesaj yok.";
@@ -3367,7 +3289,6 @@
         const msgDiv = document.createElement('div');
         const isSent = data.senderUid === currentUid;
         msgDiv.className = isSent ? 'message sent' : 'message received';
-        msgDiv.dataset.messageId = data.id || data.messageId || '';
 
         if (!isSent) {
             const sender = document.createElement('span');
@@ -3377,76 +3298,11 @@
         }
 
         const text = document.createElement('div');
-        text.className = 'message-text';
-        text.textContent = data.text || '';
+        text.textContent = data.text;
         msgDiv.appendChild(text);
-
-        const reactions = document.createElement('div');
-        reactions.className = 'message-reactions';
-        reactions.innerHTML = buildReactionsHtml(data.reactions);
-        msgDiv.appendChild(reactions);
-
-        const time = document.createElement('div');
-        time.className = 'message-time';
-        time.textContent = formatTimestamp(data.timestamp);
-        msgDiv.appendChild(time);
-
-        msgDiv.addEventListener('click', function(event) {
-            if (event.target.closest('.message-text') || event.target.closest('.message-time') || event.target.closest('.message-reactions') || event.target.closest('.message-sender')) {
-                openReactionPicker(event, data);
-            }
-        });
 
         chatBox.appendChild(msgDiv);
         scrollToBottom();
-    }
-
-    function buildReactionsHtml(reactions) {
-        if (!reactions || Object.keys(reactions).length === 0) {
-            return '';
-        }
-        return Object.entries(reactions)
-            .map(([emoji, count]) => `<span class="reaction-pill">${emoji} ${count}</span>`)
-            .join('');
-    }
-
-    function updateMessageReaction(data) {
-        const messageElement = document.querySelector(`[data-message-id="${data.id || data.messageId}"]`);
-        if (!messageElement) return;
-        const reactionBar = messageElement.querySelector('.message-reactions');
-        if (reactionBar) reactionBar.innerHTML = buildReactionsHtml(data.reactions);
-    }
-
-    function openReactionPicker(event, messageData) {
-        event.preventDefault();
-        const picker = document.getElementById('emoji-panel');
-        picker.dataset.currentMessageId = messageData.id || messageData.messageId || '';
-        picker.dataset.currentConversationId = activeConversationId;
-        picker.dataset.reactionMode = '1';
-        buildEmojiPanel();
-        picker.classList.add('active');
-    }
-
-    function sendReaction(emoji) {
-        const picker = document.getElementById('emoji-panel');
-        const messageId = picker.dataset.currentMessageId;
-        const conversationId = picker.dataset.currentConversationId;
-        if (!messageId || !conversationId) return;
-
-        const reactionKey = encodeEmojiKey(emoji);
-        const reactionRef = database.ref(`conversations/${conversationId}/messages/${messageId}/reactions/${reactionKey}`);
-        reactionRef.transaction(currentCount => {
-            return (currentCount || 0) + 1;
-        }).then(() => {
-            delete picker.dataset.currentMessageId;
-            delete picker.dataset.currentConversationId;
-            delete picker.dataset.reactionMode;
-            picker.classList.remove('active');
-        });
-    }
-
-    function encodeEmojiKey(emoji) {
-        return emoji.replace(/\uFE0F/g, '').replace(/\s+/g, '_');
     }
 
     function sendMessage() {
@@ -3513,29 +3369,15 @@
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.textContent = emoji;
-            btn.onclick = () => handleEmojiSelect(emoji);
+            btn.onclick = () => insertEmoji(emoji);
             panel.appendChild(btn);
         });
         panel.dataset.built = "1";
     }
 
-    function handleEmojiSelect(emoji) {
-        const panel = document.getElementById('emoji-panel');
-        if (panel.dataset.reactionMode === '1' && panel.dataset.currentMessageId) {
-            sendReaction(emoji);
-            return;
-        }
-        insertEmoji(emoji);
-    }
-
     function toggleEmojiPanel() {
         buildEmojiPanel();
         const panel = document.getElementById('emoji-panel');
-        if (panel.dataset.reactionMode) {
-            delete panel.dataset.currentMessageId;
-            delete panel.dataset.currentConversationId;
-            delete panel.dataset.reactionMode;
-        }
         panel.classList.toggle('active');
     }
 
