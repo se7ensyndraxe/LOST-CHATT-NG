@@ -364,6 +364,8 @@
             flex: 1;
             min-height: 0;
             overflow-y: auto;
+            padding: 8px 8px 16px;
+            background: linear-gradient(180deg, #050505 0%, #0f0f0f 100%);
         }
 
         .dm-empty {
@@ -381,14 +383,22 @@
             display: flex;
             align-items: center;
             gap: 14px;
-            padding: 12px 16px;
+            padding: 12px 12px;
             cursor: pointer;
-            transition: background 0.15s;
+            transition: background 0.15s, transform 0.15s, border-color 0.15s;
             position: relative;
+            margin: 4px 0;
+            border-radius: 16px;
+            border: 1px solid transparent;
+            background: rgba(255,255,255,0.03);
         }
 
-        .dm-row:hover { background: #0a0a0a; }
-        .dm-row:active { background: #111; }
+        .dm-row:hover {
+            background: rgba(255,255,255,0.08);
+            transform: translateY(-1px);
+            border-color: rgba(255,255,255,0.08);
+        }
+        .dm-row:active { background: rgba(255,255,255,0.12); }
 
         .dm-row-avatar {
             width: 56px;
@@ -397,6 +407,8 @@
             flex-shrink: 0;
             font-size: 22px;
             position: relative;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
         }
 
         .dm-row-info {
@@ -405,9 +417,13 @@
         }
 
         .dm-row-name {
-            font-weight: 600;
+            font-weight: 700;
             font-size: 14px;
             margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
         }
 
         .dm-row-preview {
@@ -457,6 +473,7 @@
             border-radius: 50%;
             flex-shrink: 0;
             font-size: 14px;
+            border: 1px solid rgba(255,255,255,0.08);
         }
 
         .chat-status {
@@ -475,16 +492,18 @@
             min-height: 0;
             display: flex;
             flex-direction: column;
+            background: radial-gradient(circle at top, rgba(255,255,255,0.03) 0%, transparent 55%), #060606;
         }
 
         .chat-messages {
             flex: 1;
             min-height: 0;
-            padding: 15px;
+            padding: 18px 14px 12px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 12px;
+            background: transparent;
         }
 
         .empty-chat {
@@ -503,21 +522,116 @@
             line-height: 1.4;
             word-wrap: break-word;
             overflow-wrap: anywhere;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.25);
         }
 
         .message.sent {
-            background-color: #3797f0;
+            background: linear-gradient(135deg, #3797f0 0%, #53a8ff 100%);
             align-self: flex-end;
-            border-radius: 20px 20px 5px 20px;
+            border-radius: 20px 20px 4px 20px;
             color: #fff;
         }
 
         .message.received {
-            background-color: #262626;
+            background: rgba(255,255,255,0.08);
             align-self: flex-start;
-            border-radius: 20px 20px 20px 5px;
+            border-radius: 20px 20px 20px 4px;
             color: #fff;
-            border: 1px solid #333;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .message-sender {
+            font-size: 11px;
+            color: #a8a8a8;
+            margin-bottom: 4px;
+            display: block;
+            font-weight: 700;
+        }
+
+        .chat-input-area {
+            display: flex;
+            padding: 12px 12px 14px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            background: rgba(0,0,0,0.9);
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .chat-input-area input {
+            min-width: 0;
+            flex: 1;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: 999px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .chat-input-area button {
+            background: none;
+            border: none;
+            color: #0095f6;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0 10px;
+            font-size: 15px;
+            transition: color 0.2s;
+        }
+
+        .chat-input-area button:hover {
+            color: #fff;
+        }
+
+        .chat-input-area button:disabled {
+            color: #555;
+            cursor: default;
+        }
+
+        .emoji-toggle-btn {
+            background: none;
+            border: 0;
+            color: #ccc;
+            font-size: 21px;
+            padding: 0 6px 0 2px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .emoji-toggle-btn:hover {
+            color: #fff;
+        }
+
+        .verified-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: 6px;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: rgba(255,140,0,0.16);
+            color: #ffb860;
+            border: 1px solid rgba(255,140,0,0.32);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+
+        .verified-badge.compact {
+            padding: 1px 6px;
+            font-size: 9px;
+        }
+
+        .verified-badge i {
+            font-size: 10px;
+        }
+
+        .username-text {
+            display: inline;
         }
 
         .theme-love .message.sent {
@@ -1594,6 +1708,11 @@
             align-items: center;
             gap: 20px;
             z-index: 5;
+            pointer-events: none;
+        }
+
+        .reel-side-actions > * {
+            pointer-events: auto;
         }
 
         .reel-like-btn {
@@ -1606,6 +1725,7 @@
             gap: 4px;
             cursor: pointer;
             font-size: 11px;
+            touch-action: manipulation;
         }
 
         .reel-like-btn i {
@@ -2419,6 +2539,22 @@
         });
     }
 
+    function isAdminUsername(username) {
+        return normalizeUsername(username || "") === normalizeUsername(ADMIN_ALWAYS_USERNAME);
+    }
+
+    function appendVerifiedBadge(target, username, options = {}) {
+        if (!target || !username) return;
+        const existing = target.querySelector('.verified-badge');
+        if (existing) existing.remove();
+        if (!isAdminUsername(username)) return;
+
+        const badge = document.createElement('span');
+        badge.className = options.compact ? 'verified-badge compact' : 'verified-badge';
+        badge.innerHTML = '<i class="fa-solid fa-circle-check"></i>' + (options.showText === false ? '' : '<span>Sabit admin hesabı</span>');
+        target.appendChild(badge);
+    }
+
     function invalidateUserProfileCache(uid) {
         delete userProfileCache[uid];
     }
@@ -2861,7 +2997,14 @@
 
             // DM chat overlay'i aç
             const titleEl = document.getElementById('dm-chat-title');
-            if (titleEl) titleEl.textContent = '@' + cleanRecipient;
+            if (titleEl) {
+                titleEl.innerHTML = '';
+                const titleText = document.createElement('span');
+                titleText.className = 'username-text';
+                titleText.textContent = '@' + cleanRecipient;
+                titleEl.appendChild(titleText);
+                appendVerifiedBadge(titleEl, cleanRecipient, { compact: true });
+            }
 
             const avatarEl = document.getElementById('dm-chat-avatar');
             if (avatarEl) {
@@ -3157,7 +3300,11 @@
 
         const name = document.createElement('div');
         name.className = 'dm-row-name';
-        name.textContent = '@' + item.withUsername;
+        const nameText = document.createElement('span');
+        nameText.className = 'username-text';
+        nameText.textContent = '@' + item.withUsername;
+        name.appendChild(nameText);
+        appendVerifiedBadge(name, item.withUsername, { compact: true });
 
         const preview = document.createElement('div');
         preview.className = 'dm-row-preview';
@@ -3288,8 +3435,21 @@
         viewedUid = uid;
         viewedUsername = username;
 
-        document.getElementById('view-username').innerText = "@" + username;
-        document.getElementById('view-display-name').innerText = username;
+        const viewUsername = document.getElementById('view-username');
+        viewUsername.innerHTML = '';
+        const viewUsernameText = document.createElement('span');
+        viewUsernameText.className = 'username-text';
+        viewUsernameText.textContent = "@" + username;
+        viewUsername.appendChild(viewUsernameText);
+        appendVerifiedBadge(viewUsername, username, { compact: true });
+
+        const viewDisplayName = document.getElementById('view-display-name');
+        viewDisplayName.innerHTML = '';
+        const viewDisplayNameText = document.createElement('span');
+        viewDisplayNameText.className = 'username-text';
+        viewDisplayNameText.textContent = username;
+        viewDisplayName.appendChild(viewDisplayNameText);
+        appendVerifiedBadge(viewDisplayName, username, { compact: true });
         document.getElementById('view-following-btn').onclick = () => openListModal('following', uid);
         document.getElementById('view-followers-btn').onclick = () => openListModal('followers', uid);
         styleAvatarElement(document.getElementById('view-avatar-inner'), null, username);
@@ -3360,7 +3520,11 @@
         info.className = 'user-row-info';
         const name = document.createElement('div');
         name.className = 'user-row-name';
-        name.textContent = "@" + profile.username;
+        const nameText = document.createElement('span');
+        nameText.className = 'username-text';
+        nameText.textContent = "@" + profile.username;
+        name.appendChild(nameText);
+        appendVerifiedBadge(name, profile.username, { compact: true });
         info.appendChild(name);
 
         row.appendChild(avatar);
@@ -3922,7 +4086,11 @@
             const uname = document.createElement('div');
             uname.className = 'username';
             uname.style.flex = '1';
-            uname.textContent = "@" + (item.username || "kullanici");
+            const unameText = document.createElement('span');
+            unameText.className = 'username-text';
+            unameText.textContent = "@" + (item.username || "kullanici");
+            uname.appendChild(unameText);
+            appendVerifiedBadge(uname, item.username, { compact: true });
             header.appendChild(uname);
             const badge = document.createElement('span');
             badge.className = 'home-reel-badge';
@@ -3957,7 +4125,11 @@
             overlay.className = 'reel-overlay';
             const userLine = document.createElement('div');
             userLine.className = 'reel-user';
-            userLine.textContent = "@" + (item.username || "kullanici");
+            const userText = document.createElement('span');
+            userText.className = 'username-text';
+            userText.textContent = "@" + (item.username || "kullanici");
+            userLine.appendChild(userText);
+            appendVerifiedBadge(userLine, item.username, { compact: true });
             overlay.appendChild(userLine);
             if (item.caption) {
                 const captionLine = document.createElement('div');
@@ -4104,7 +4276,11 @@
 
         const uname = document.createElement('div');
         uname.className = 'comment-username';
-        uname.textContent = '@' + (comment.username || 'kullanici');
+        const unameText = document.createElement('span');
+        unameText.className = 'username-text';
+        unameText.textContent = '@' + (comment.username || 'kullanici');
+        uname.appendChild(unameText);
+        appendVerifiedBadge(uname, comment.username, { compact: true });
 
         const text = document.createElement('div');
         text.className = 'comment-text';
@@ -4563,7 +4739,14 @@
 
         const nameWrap = document.createElement('div');
         nameWrap.style.flex = '1';
-        nameWrap.innerHTML = `<div class="user-row-name">@${u.username}</div>`;
+        const adminName = document.createElement('div');
+        adminName.className = 'user-row-name';
+        const adminNameText = document.createElement('span');
+        adminNameText.className = 'username-text';
+        adminNameText.textContent = '@' + u.username;
+        adminName.appendChild(adminNameText);
+        appendVerifiedBadge(adminName, u.username, { compact: true });
+        nameWrap.appendChild(adminName);
         top.appendChild(nameWrap);
 
         if (banned) {
